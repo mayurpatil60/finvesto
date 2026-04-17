@@ -1,8 +1,9 @@
 // ─── Settings Screen ──────────────────────────────────────────────────────────
 
-import React from 'react';
-import { ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
+import React, { useState } from 'react';
+import { ActivityIndicator, Alert, ScrollView, StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import * as Updates from 'expo-updates';
 import { useTheme } from '../../components/theme/ThemeProvider';
 import { AppHeader } from '../../components/layout/AppHeader';
 import { APP_NAME, SPACING } from '../../types/constants';
@@ -10,6 +11,30 @@ import { APP_NAME, SPACING } from '../../types/constants';
 export function SettingsScreen() {
   const { theme, isDark, setDark } = useTheme();
   const c = theme.colors;
+  const [updating, setUpdating] = useState(false);
+
+  async function checkForUpdate() {
+    if (__DEV__) {
+      Alert.alert('OTA Updates', 'Updates are not available in development mode.');
+      return;
+    }
+    setUpdating(true);
+    try {
+      const result = await Updates.checkForUpdateAsync();
+      if (result.isAvailable) {
+        await Updates.fetchUpdateAsync();
+        Alert.alert('Update Ready', 'A new update has been downloaded. The app will now restart.', [
+          { text: 'OK', onPress: () => Updates.reloadAsync() },
+        ]);
+      } else {
+        Alert.alert('Up to Date', 'You are already on the latest version.');
+      }
+    } catch {
+      Alert.alert('Error', 'Could not check for updates. Please try again.');
+    } finally {
+      setUpdating(false);
+    }
+  }
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: c.background }]}>
@@ -35,6 +60,24 @@ export function SettingsScreen() {
               thumbColor={c.switchThumb}
             />
           </View>
+        </View>
+
+        {/* Updates Section */}
+        <Text style={[styles.sectionLabel, { color: c.textSecondary }]}>UPDATES</Text>
+
+        <View style={[styles.card, { backgroundColor: c.surface, borderColor: c.border }]}>
+          <TouchableOpacity style={styles.row} onPress={checkForUpdate} disabled={updating}>
+            <View style={styles.rowLeft}>
+              <Text style={[styles.rowTitle, { color: c.text }]}>Check for Updates</Text>
+              <Text style={[styles.rowSubtitle, { color: c.textSecondary }]}>
+                Download and apply the latest version
+              </Text>
+            </View>
+            {updating
+              ? <ActivityIndicator color={c.primary} />
+              : <Text style={[styles.rowValue, { color: c.primary }]}>Update</Text>
+            }
+          </TouchableOpacity>
         </View>
 
         {/* About Section */}
