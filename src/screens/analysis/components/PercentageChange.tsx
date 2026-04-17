@@ -1,11 +1,11 @@
-// ─── Percentage Change Component ─────────────────────────────────────────────
-// Shows multiple price entries and calculates % change from first entry.
+// ─── Percentage Change Component ────────────────────────────────────────────────
+// Search by option name, show current_price change % across batches
 
 import React, { useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
-  FlatList,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -14,7 +14,40 @@ import {
 } from 'react-native';
 import { useTheme } from '../../../components/theme/ThemeProvider';
 import { SPACING } from '../../../types/constants';
+import { DynamicTable } from '../../../components/dynamic-table/DynamicTable';
+import { DynamicColumn } from '../../../components/dynamic-table/types';
 import { analysisService } from '../services/analysis.service';
+
+function pctColor(val: any): string | undefined {
+  if (val === 'Base') return undefined;
+  const n = parseFloat(String(val ?? ''));
+  if (isNaN(n)) return undefined;
+  return n >= 0 ? '#16a34a' : '#dc2626';
+}
+
+function parseBatchDateTime(batchId: string): Date {
+  const [datePart, timePartRaw] = batchId.split('_');
+  const timePart = timePartRaw.trim().toUpperCase();
+  const match = timePart.match(/^(d{1,2}):(d{2})(AM|PM)$/);
+  let hours = parseInt(match[1], 10);
+  const minutes = parseInt(match[2], 10);
+  if (match[3] === 'PM' && hours !== 12) hours += 12;
+  if (match[3] === 'AM' && hours === 12) hours = 0;
+  return new Date(`${datePart}T${String(hours).padStart(2,'0')}:${String(minutes).padStart(2,'0')}:00`);
+}
+
+const SCHEMA: DynamicColumn[] = [
+  { field: 'bDate',           header: 'Date',     width: 90,  type: 'text',   sortable: true },
+  { field: 'bTime',           header: 'Time',     width: 70,  type: 'text',   sortable: true },
+  { field: 'ticker',          header: 'Ticker',   width: 80,  type: 'text',   sortable: true, copyEnabled: true, copyPrefix: 'NSE:' },
+  { field: 'mappDisplayName', header: 'Name',     width: 160, type: 'text',   sortable: true, filterable: true, copyEnabled: true, copyPrefix: '' },
+  { field: 'current_price',   header: 'Price',    width: 80,  type: 'number', sortable: true },
+  { field: 'changeP',         header: '% Chg',    width: 80,  type: 'number', sortable: true, colorFn: pctColor },
+  { field: 'day_changeP',     header: 'Day %',    width: 70,  type: 'number', sortable: true, colorFn: pctColor },
+  { field: 'rsi',             header: 'RSI',      width: 60,  type: 'number', sortable: true },
+  { field: 'tag',             header: 'Tag',      width: 100, type: 'text',   sortable: true, filterable: true },
+  { field: 'expiry',          header: 'Expiry',   width: 100, type: 'text',   sortable: true },
+];
 
 export function PercentageChange() {
   const { theme } = useTheme();
@@ -25,31 +58,34 @@ export function PercentageChange() {
   const [rows, setRows] = useState<any[]>([]);
 
   async function load() {
-    if (!name.trim()) { Alert.alert('Validation', 'Enter an option name.'); return; }
     setLoading(true);
     setRows([]);
     try {
       const res = await analysisService.getByName(name.trim());
+      // Parse date/time and sort ascending (oldest first = base)
       const sorted = (res.data ?? [])
         .map((item: any) => {
           const [bDate, bTime] = (item.batch_id || '').split('_');
           return { ...item, bDate, bTime };
         })
-        .sort((a: any, b: any) => {
-          const da = `${a.bDate}_${a.bTime}`;
-          const db = `${b.bDate}_${b.bTime}`;
-          return da > db ? 1 : da < db ? -1 : 0;
-        });
+        .sort((a: any, b: any) =>
+          parseBatchDateTime(a.batch_id || '').getTime() - parseBatchDateTime(b.batch_id || '').getTime()
+        );
 
-      if (!sorted.length) { setRows([]); return; }
 
-      const basePrice = Number(sorted[0].ltp ?? sorted[0].lastPrice ?? 0);
-      const enriched = sorted.map((item: any, idx: number) => {
-        const ltp = Number(item.ltp ?? item.lastPrice ?? 0);
-        const change = basePrice !== 0 ? (((ltp - basePrice) / Math.abs(basePrice)) * 100).toFixed(2) : '—';
-        return { ...item, changeP: change, isFirst: idx === 0 };
+      const basePrice = parseFloat(sorted[0].current_price ?? sorted[0].ltp ?? 0) || 0;
+      const withChange = sorted.map((item: any, idx: number) => {
+        const price = parseFloat(item.current_price ?? item.ltp ?? 0) || 0;
+        const changeP = idx === 0
+          ? 'Base'
+          : basePrice !== 0
+            ? ((price - basePrice) / Math.abs(basePrice) * 100).toFixed(2)
+            : '—';
+        return { ...item, changeP };
       });
-      setRows(enriched);
+
+      // Show newest first after computing change
+      setRows([...withChange].reverse());
     } catch (e: any) {
       Alert.alert('Error', e.message);
     } finally {
@@ -57,97 +93,66 @@ export function PercentageChange() {
     }
   }
 
-  function renderItem({ item }: { item: any }) {
-    const pct = parseFloat(item.changeP);
-    const isPositive = pct > 0;
-    const color = item.isFirst ? c.text : isPositive ? '#16a34a' : pct < 0 ? '#dc2626' : c.text;
-    return (
-      <View style={[styles.card, { backgroundColor: c.surface, borderColor: c.border }]}>
-        <View style={styles.row}>
-          <View style={{ flex: 1 }}>
-            <Text style={[styles.name, { color: c.text }]}>
-              {item.mappDisplayName || item.stockName || item.name || '—'}
-            </Text>
-            <Text style={[styles.sub, { color: c.textSecondary }]}>{item.bDate} {item.bTime}</Text>
-          </View>
-          <View style={{ alignItems: 'flex-end' }}>
-            <Text style={[styles.ltp, { color: c.text }]}>₹{item.ltp ?? item.lastPrice ?? '—'}</Text>
-            <Text style={[styles.changeP, { color }]}>
-              {item.isFirst ? 'Base' : `${isPositive ? '+' : ''}${item.changeP}%`}
-            </Text>
+  return (
+    <ScrollView style={[styles.container, { backgroundColor: c.background }]} contentContainerStyle={styles.content}>
+      <View style={[styles.formCard, { backgroundColor: c.surface, borderColor: c.border }]}>
+        <Text style={[styles.formNote, { color: c.textSecondary }]}>
+          Track price changes over batches. Oldest record is base (0%), all others show % change from it.
+        </Text>
+        <View style={styles.controlsRow}>
+          <TextInput
+            style={[styles.input, { color: c.text, borderColor: c.border, backgroundColor: c.background, flex: 1 }]}
+            value={name}
+            onChangeText={setName}
+            placeholder="e.g. RECLTD 315 PE"
+            placeholderTextColor={c.textSecondary}
+            autoCapitalize="characters"
+            returnKeyType="search"
+            onSubmitEditing={load}
+          />
+          <View style={styles.btnGroup}>
+            <TouchableOpacity
+              style={[styles.btn, { backgroundColor: c.primary, opacity: loading ? 0.7 : 1 }]}
+              onPress={load}
+              disabled={loading}
+            >
+              {loading
+                ? <ActivityIndicator color="#fff" size="small" />
+                : <Text style={styles.btnText}>Go</Text>
+              }
+            </TouchableOpacity>
+            {rows.length > 0 && (
+              <TouchableOpacity
+                style={[styles.btnSecondary, { borderColor: c.border, backgroundColor: c.surface }]}
+                onPress={() => setRows([])}
+              >
+                <Text style={[styles.btnText, { color: c.text }]}>✕</Text>
+              </TouchableOpacity>
+            )}
           </View>
         </View>
       </View>
-    );
-  }
-
-  return (
-    <View style={[styles.container, { backgroundColor: c.background }]}>
-      <View style={styles.inputRow}>
-        <TextInput
-          style={[styles.input, { color: c.text, borderColor: c.border, backgroundColor: c.surface, flex: 1 }]}
-          value={name}
-          onChangeText={setName}
-          placeholder="Option name (e.g. NIFTY25MAY24000CE)"
-          placeholderTextColor={c.textSecondary}
-          autoCapitalize="characters"
-          returnKeyType="search"
-          onSubmitEditing={load}
-        />
-        <TouchableOpacity
-          style={[styles.goBtn, { backgroundColor: c.primary, opacity: loading ? 0.7 : 1 }]}
-          onPress={load}
-          disabled={loading}
-        >
-          {loading ? <ActivityIndicator color="#fff" size="small" /> : <Text style={styles.goBtnText}>Go</Text>}
-        </TouchableOpacity>
-      </View>
-
-      <FlatList
+      <DynamicTable
         data={rows}
-        keyExtractor={(_, i) => String(i)}
-        renderItem={renderItem}
-        contentContainerStyle={styles.list}
-        ListEmptyComponent={
-          !loading ? <Text style={[styles.empty, { color: c.textSecondary }]}>Enter an option name to see % change over time.</Text> : null
-        }
+        schema={SCHEMA}
+        loading={loading}
+        onRefresh={load}
+        title="% Change"
+        emptyText="Enter an option name to see % change over time."
       />
-    </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  inputRow: {
-    flexDirection: 'row',
-    margin: SPACING.md,
-    gap: SPACING.sm,
-    alignItems: 'center',
-  },
-  input: {
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.sm,
-    fontSize: 14,
-  },
-  goBtn: {
-    borderRadius: 8,
-    paddingHorizontal: SPACING.lg,
-    paddingVertical: SPACING.sm,
-  },
-  goBtnText: { color: '#fff', fontWeight: '600', fontSize: 14 },
-  list: { paddingHorizontal: SPACING.md, paddingBottom: SPACING.xl },
-  card: {
-    borderRadius: 10,
-    borderWidth: 1,
-    padding: SPACING.md,
-    marginBottom: SPACING.sm,
-  },
-  row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  name: { fontSize: 14, fontWeight: '600' },
-  sub: { fontSize: 11, marginTop: 2 },
-  ltp: { fontSize: 15, fontWeight: '700' },
-  changeP: { fontSize: 13, fontWeight: '600', marginTop: 2 },
-  empty: { textAlign: 'center', marginTop: SPACING.xl, fontSize: 14 },
+  content: { paddingBottom: SPACING.xl },
+  formCard: { margin: SPACING.md, marginBottom: SPACING.sm, borderRadius: 12, borderWidth: 1, padding: SPACING.md, gap: SPACING.md },
+  formNote: { fontSize: 12, lineHeight: 18 },
+  controlsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: SPACING.sm, alignItems: 'flex-end' },
+  input: { borderWidth: 1, borderRadius: 8, paddingHorizontal: SPACING.md, paddingVertical: 9, fontSize: 14 },
+  btnGroup: { flexDirection: 'row', gap: SPACING.sm, alignItems: 'flex-end', paddingBottom: 1 },
+  btn: { borderRadius: 8, paddingHorizontal: SPACING.md, paddingVertical: 9, alignItems: 'center', justifyContent: 'center', minWidth: 60 },
+  btnSecondary: { borderRadius: 8, borderWidth: 1, paddingHorizontal: SPACING.md, paddingVertical: 9, alignItems: 'center', justifyContent: 'center' },
+  btnText: { color: '#fff', fontWeight: '600', fontSize: 14 },
 });

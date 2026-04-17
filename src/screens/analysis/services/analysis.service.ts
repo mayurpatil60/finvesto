@@ -26,13 +26,18 @@ export class AnalysisService {
     return res.json();
   }
 
-  /** GET /analysis/by-name?name=... */
+  /** GET /analysis/by-name?optionName=... (partial case-insensitive match on mappDisplayName) */
   async getByName(name: string): Promise<{ data: any[] }> {
     const res = await fetch(
-      `${BASE_URL}/analysis/by-name?name=${encodeURIComponent(name)}`,
+      `${BASE_URL}/analysis/by-name?optionName=${encodeURIComponent(name)}`,
     );
     if (!res.ok) throw new Error(`Failed to fetch by name: ${res.status}`);
     return res.json();
+  }
+
+  /** GET /analysis/by-name for multiple names in parallel */
+  async getAllByNames(names: string[]): Promise<{ data: any[] }[]> {
+    return Promise.all(names.map((n) => this.getByName(n)));
   }
 
   /** GET /api/option-chain?symbols=...&expiry=... */
@@ -41,7 +46,7 @@ export class AnalysisService {
     expiry: string,
   ): Promise<{ data: any }> {
     const res = await fetch(
-      `${BASE_URL}/api/option-chain?symbols=${encodeURIComponent(symbols)}&expiry=${encodeURIComponent(expiry)}`,
+      `${BASE_URL}/api/option-chain?ticker=${encodeURIComponent(symbols)}&expiryDate=${encodeURIComponent(expiry)}`,
     );
     if (!res.ok) throw new Error(`Failed to fetch option chain: ${res.status}`);
     return res.json();

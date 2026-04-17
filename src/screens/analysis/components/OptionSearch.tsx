@@ -1,10 +1,10 @@
-// ─── Option Search / History Component ───────────────────────────────────────
+// ─── Option Search / History Component ────────────────────────────────────────────────
 
 import React, { useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
-  FlatList,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -13,9 +13,77 @@ import {
 } from 'react-native';
 import { useTheme } from '../../../components/theme/ThemeProvider';
 import { SPACING } from '../../../types/constants';
+import { DynamicTable } from '../../../components/dynamic-table/DynamicTable';
+import { DynamicColumn } from '../../../components/dynamic-table/types';
 import { analysisService } from '../services/analysis.service';
 
-const DISPLAY_KEYS = ['mappDisplayName', 'bDate', 'bTime', 'expiry', 'strikePrice', 'optionType', 'ltp', 'tag'];
+// Keys shown in table — mirrors Angular mapAnalysisKeys
+const SCHEMA: DynamicColumn[] = [
+  { field: 'bDate',           header: 'Date',       width: 90,  type: 'text',   sortable: true },
+  { field: 'bTime',           header: 'Time',       width: 70,  type: 'text',   sortable: true },
+  { field: 'ticker',          header: 'Ticker',     width: 80,  type: 'text',   sortable: true, filterable: true, copyEnabled: true, copyPrefix: 'NSE:' },
+  { field: 'mappDisplayName', header: 'Name',       width: 160, type: 'text',   sortable: true, filterable: true, copyEnabled: true, copyPrefix: '' },
+  { field: 'current_price',   header: 'Price',      width: 80,  type: 'number', sortable: true },
+  { field: 'day_changeP',     header: 'Day %',      width: 70,  type: 'number', sortable: true, colorFn: pctColor },
+  { field: 'change_per_month',header: 'Month %',    width: 80,  type: 'number', sortable: true, colorFn: pctColor },
+  { field: 'rsi',             header: 'RSI',        width: 60,  type: 'number', sortable: true },
+  { field: 'volume',          header: 'Volume',     width: 80,  type: 'number', sortable: true },
+  { field: 'amount',          header: 'Amount',     width: 80,  type: 'number', sortable: true },
+  { field: 'expiry',          header: 'Expiry',     width: 100, type: 'text',   sortable: true },
+  { field: 'tag',             header: 'Tag',        width: 100, type: 'text',   sortable: true, filterable: true },
+];
+
+function pctColor(val: any): string | undefined {
+  const n = parseFloat(String(val ?? ''));
+  if (isNaN(n)) return undefined;
+  return n >= 0 ? '#16a34a' : '#dc2626';
+}
+
+function parseBatchDateTime(batchId: string): Date {
+  const [datePart, timePartRaw] = batchId.split('_');
+  const timePart = timePartRaw.trim().toUpperCase();
+  const match = timePart.match(/^(\d{1,2}):(\d{2})(AM|PM)$/);
+  if (!match) return new Date(0);
+  let hours = parseInt(match[1], 10);
+  const minutes = parseInt(match[2], 10);
+  if (match[3] === 'PM' && hours !== 12) hours += 12;
+  if (match[3] === 'AM' && hours === 12) hours = 0;
+  return new Date(`${datePart}T${String(hours).padStart(2,'0')}:${String(minutes).padStart(2,'0')}:00`);
+}
+
+function enrichAmount(item: any): any {
+  const amount = Math.round((parseFloat(item.current_price) || 0) * (item.lot_size || 0));
+  return { ...item, amount };
+}
+
+function addTimeSeriesTags(data: any[]): any[] {
+  const tagged = data.map((cur, idx) => {
+    const prev = data[idx + 1];
+    const pp = data[idx + 2];
+    const tags: string[] = [];
+    const oc = cur.current_price, op = prev?.current_price, opp = pp?.current_price;
+    if (prev && pp && oc !== undefined && op !== undefined && opp !== undefined) {
+      if (opp > op && op < oc) tags.push('BuyOp');
+    }
+    const cr = cur.rsi, pr = prev?.rsi;
+    if (prev && cr !== undefined && pr !== undefined) {
+      if (pr <= 40 && cr > 40) tags.push('Rsi40');
+      if (pr >= 60 && cr < 60) tags.push('Rsi60');
+    }
+    return { ...cur, tag: tags.join(', ') };
+  });
+  // Mark lowest BuyOp as NearLow
+  const buyOps = tagged.filter(i => i.tag.includes('BuyOp'));
+  if (buyOps.length > 1) {
+    const lowest = buyOps.reduce((min, c) =>
+      (c.current_price ?? Infinity) < (min.current_price ?? Infinity) ? c : min
+    );
+    return tagged.map(i =>
+      i === lowest ? { ...i, tag: i.tag.replace('BuyOp', 'NearLow') } : i
+    );
+  }
+  return tagged;
+}
 
 export function OptionSearch() {
   const { theme } = useTheme();
@@ -26,20 +94,20 @@ export function OptionSearch() {
   const [data, setData] = useState<any[]>([]);
 
   async function search() {
-    if (!name.trim()) { Alert.alert('Validation', 'Enter an option name to search.'); return; }
     setLoading(true);
     setData([]);
     try {
       const res = await analysisService.getByName(name.trim());
-      const enriched = (res.data ?? []).map((item: any) => {
+      let result: any[] = (res.data ?? []).map((item: any) => {
         const [bDate, bTime] = (item.batch_id || '').split('_');
-        return { ...item, bDate, bTime };
-      }).sort((a: any, b: any) => {
-        const da = `${a.bDate}_${a.bTime}`;
-        const db = `${b.bDate}_${b.bTime}`;
-        return da > db ? -1 : da < db ? 1 : 0;
+        return enrichAmount({ ...item, bDate, bTime });
       });
-      setData(enriched);
+      // Sort descending by batch date-time
+      result = result.sort((a, b) =>
+        parseBatchDateTime(b.batch_id || '').getTime() - parseBatchDateTime(a.batch_id || '').getTime()
+      );
+      result = addTimeSeriesTags(result);
+      setData(result);
     } catch (e: any) {
       Alert.alert('Error', e.message);
     } finally {
@@ -47,89 +115,66 @@ export function OptionSearch() {
     }
   }
 
-  function renderItem({ item }: { item: any }) {
-    return (
-      <View style={[styles.card, { backgroundColor: c.surface, borderColor: c.border }]}>
-        <Text style={[styles.cardTitle, { color: c.text }]}>
-          {item.mappDisplayName || item.stockName || '—'}
-        </Text>
-        {DISPLAY_KEYS.filter(k => k !== 'mappDisplayName' && item[k] !== undefined && item[k] !== null).map(key => (
-          <View key={key} style={styles.row}>
-            <Text style={[styles.key, { color: c.textSecondary }]}>{key}</Text>
-            <Text style={[styles.val, { color: c.text }]}>{String(item[key])}</Text>
-          </View>
-        ))}
-      </View>
-    );
-  }
-
   return (
-    <View style={[styles.container, { backgroundColor: c.background }]}>
-      <View style={styles.inputRow}>
-        <TextInput
-          style={[styles.input, { color: c.text, borderColor: c.border, backgroundColor: c.surface, flex: 1 }]}
-          value={name}
-          onChangeText={setName}
-          placeholder="Search option name…"
-          placeholderTextColor={c.textSecondary}
-          autoCapitalize="characters"
-          returnKeyType="search"
-          onSubmitEditing={search}
-        />
-        <TouchableOpacity
-          style={[styles.searchBtn, { backgroundColor: c.primary, opacity: loading ? 0.7 : 1 }]}
-          onPress={search}
-          disabled={loading}
-        >
-          {loading ? <ActivityIndicator color="#fff" size="small" /> : <Text style={styles.searchBtnText}>Search</Text>}
-        </TouchableOpacity>
+    <ScrollView style={[styles.container, { backgroundColor: c.background }]} contentContainerStyle={styles.content}>
+      <View style={[styles.formCard, { backgroundColor: c.surface, borderColor: c.border }]}>
+        <Text style={[styles.formNote, { color: c.textSecondary }]}>
+          Search historical records by option name (partial match). e.g. RECLTD 315 PE
+        </Text>
+        <View style={styles.controlsRow}>
+          <TextInput
+            style={[styles.input, { color: c.text, borderColor: c.border, backgroundColor: c.background, flex: 1 }]}
+            value={name}
+            onChangeText={setName}
+            placeholder="e.g. RECLTD 315 PE"
+            placeholderTextColor={c.textSecondary}
+            autoCapitalize="characters"
+            returnKeyType="search"
+            onSubmitEditing={search}
+          />
+          <View style={styles.btnGroup}>
+            <TouchableOpacity
+              style={[styles.btn, { backgroundColor: c.primary, opacity: loading ? 0.7 : 1 }]}
+              onPress={search}
+              disabled={loading}
+            >
+              {loading
+                ? <ActivityIndicator color="#fff" size="small" />
+                : <Text style={styles.btnText}>Search</Text>
+              }
+            </TouchableOpacity>
+            {data.length > 0 && (
+              <TouchableOpacity
+                style={[styles.btnSecondary, { borderColor: c.border, backgroundColor: c.surface }]}
+                onPress={() => setData([])}
+              >
+                <Text style={[styles.btnText, { color: c.text }]}>✕</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        </View>
       </View>
-
-      <FlatList
+      <DynamicTable
         data={data}
-        keyExtractor={(_, i) => String(i)}
-        renderItem={renderItem}
-        contentContainerStyle={styles.list}
-        ListEmptyComponent={
-          !loading ? <Text style={[styles.empty, { color: c.textSecondary }]}>No results. Enter a name and search.</Text> : null
-        }
+        schema={SCHEMA}
+        loading={loading}
+        onRefresh={search}
+        title="Option History"
+        emptyText="Enter an option name and press Search."
       />
-    </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  inputRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    margin: SPACING.md,
-    gap: SPACING.sm,
-  },
-  input: {
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.sm,
-    fontSize: 14,
-  },
-  searchBtn: {
-    borderRadius: 8,
-    paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.sm,
-    alignItems: 'center',
-  },
-  searchBtnText: { color: '#fff', fontWeight: '600', fontSize: 14 },
-  list: { paddingHorizontal: SPACING.md, paddingBottom: SPACING.xl },
-  card: {
-    borderRadius: 10,
-    borderWidth: 1,
-    padding: SPACING.md,
-    marginBottom: SPACING.sm,
-  },
-  cardTitle: { fontSize: 15, fontWeight: '700', marginBottom: SPACING.sm },
-  row: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 2 },
-  key: { fontSize: 12, flex: 1 },
-  val: { fontSize: 12, flex: 1, textAlign: 'right' },
-  empty: { textAlign: 'center', marginTop: SPACING.xl, fontSize: 14 },
+  content: { paddingBottom: SPACING.xl },
+  formCard: { margin: SPACING.md, marginBottom: SPACING.sm, borderRadius: 12, borderWidth: 1, padding: SPACING.md, gap: SPACING.md },
+  formNote: { fontSize: 12, lineHeight: 18 },
+  controlsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: SPACING.sm, alignItems: 'flex-end' },
+  input: { borderWidth: 1, borderRadius: 8, paddingHorizontal: SPACING.md, paddingVertical: 9, fontSize: 14 },
+  btnGroup: { flexDirection: 'row', gap: SPACING.sm, alignItems: 'flex-end', paddingBottom: 1 },
+  btn: { borderRadius: 8, paddingHorizontal: SPACING.md, paddingVertical: 9, alignItems: 'center', justifyContent: 'center', minWidth: 60 },
+  btnSecondary: { borderRadius: 8, borderWidth: 1, paddingHorizontal: SPACING.md, paddingVertical: 9, alignItems: 'center', justifyContent: 'center' },
+  btnText: { color: '#fff', fontWeight: '600', fontSize: 14 },
 });

@@ -4,7 +4,6 @@ import React, { useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
-  FlatList,
   ScrollView,
   StyleSheet,
   Text,
@@ -12,33 +11,58 @@ import {
   View,
 } from 'react-native';
 import { useTheme } from '../../../components/theme/ThemeProvider';
+import { SelectInput, SelectOption } from '../../../components/common/SelectInput';
+import { DynamicTable } from '../../../components/dynamic-table/DynamicTable';
+import { DynamicColumn } from '../../../components/dynamic-table/types';
 import { SPACING } from '../../../types/constants';
 import { marketsService } from '../services/markets.service';
 
-const GROUPS = [
-  { label: 'All', value: 'all' },
-  { label: 'F&O', value: 'fno-stocks' },
-  { label: 'ETF', value: 'only-etfs' },
-  { label: 'SME', value: 'sme-stocks' },
-  { label: 'Non-SME', value: 'non-sme-stocks' },
+type GroupValue = 'all' | 'fno-stocks' | 'only-etfs' | 'sme-stocks' | 'non-sme-stocks';
+type QueryValue = string;
+
+const GROUP_OPTIONS: SelectOption<GroupValue>[] = [
+  { label: 'All Stocks', value: 'all' },
+  { label: 'F&O Stocks', value: 'fno-stocks' },
+  { label: 'Only ETFs', value: 'only-etfs' },
+  { label: 'SME Stocks', value: 'sme-stocks' },
+  { label: 'Non-SME Stocks', value: 'non-sme-stocks' },
 ];
 
-const QUERIES = [
-  { label: 'RSI > 60', value: 'prev_rsi < 60 && rsi > 60' },
-  { label: 'RSI < 60', value: 'prev_rsi > 60 && rsi < 60' },
-  { label: 'RSI > 40', value: 'prev_rsi < 40 && rsi > 40' },
-  { label: 'RSI > 30', value: 'prev_rsi < 30 && rsi > 30' },
-  { label: 'RSI < 30', value: 'rsi < 30' },
-  { label: 'RSI < 40', value: 'rsi < 40' },
-  { label: 'All', value: 'currentPrice > 0' },
+const QUERY_OPTIONS: SelectOption<QueryValue>[] = [
+  { label: 'RSI crossing 60 ↑', value: 'prev_rsi < 60 && rsi > 60' },
+  { label: 'RSI crossing 60 ↓', value: 'prev_rsi > 60 && rsi < 60' },
+  { label: 'RSI crossing 40 ↑', value: 'prev_rsi < 40 && rsi > 40' },
+  { label: 'RSI crossing 30 ↑', value: 'prev_rsi < 30 && rsi > 30' },
+  { label: 'RSI below 30', value: 'rsi < 30' },
+  { label: 'RSI below 40', value: 'rsi < 40' },
+  { label: 'All (Price > 0)', value: 'currentPrice > 0' },
+];
+
+// Color-code change% columns
+const changeColorFn = (val: any) => {
+  const n = parseFloat(String(val ?? ''));
+  if (isNaN(n)) return undefined;
+  return n >= 0 ? '#16a34a' : '#dc2626';
+};
+
+// Known schema — DynamicTable will auto-add any extra columns from the API
+const FUND_SCHEMA: DynamicColumn[] = [
+  { field: 'get_full_name', header: 'Company',    width: 180, type: 'text',   sortable: true, filterable: true, copyEnabled: true, copyPrefix: 'NSE:' },
+  { field: 'NSEcode',        header: 'NSE Code',   width: 100, type: 'text',   sortable: true, filterable: true },
+  { field: 'currentPrice',   header: 'Price ₹',    width: 80,  type: 'number', sortable: true },
+  { field: 'rsi',            header: 'RSI',         width: 70,  type: 'number', sortable: true },
+  { field: 'prev_rsi',       header: 'Prev RSI',    width: 80,  type: 'number', sortable: true },
+  { field: 'qtr_changeP',    header: 'Qtr %',       width: 80,  type: 'number', sortable: true, colorFn: changeColorFn },
+  { field: 'month_changeP',  header: 'Month %',     width: 80,  type: 'number', sortable: true, colorFn: changeColorFn },
+  { field: 'week_changeP',   header: 'Week %',      width: 80,  type: 'number', sortable: true, colorFn: changeColorFn },
 ];
 
 export function FundamentalsScreen() {
   const { theme } = useTheme();
   const c = theme.colors;
 
-  const [group, setGroup] = useState(GROUPS[0].value);
-  const [query, setQuery] = useState(QUERIES[0].value);
+  const [group, setGroup] = useState<GroupValue>('all');
+  const [query, setQuery] = useState<QueryValue>(QUERY_OPTIONS[0].value);
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<any[]>([]);
 
@@ -47,7 +71,6 @@ export function FundamentalsScreen() {
     setData([]);
     try {
       const res = await marketsService.getFundamentals({ group, query });
-      // flatten pages
       const flat: any[] = [];
       const pages = Array.isArray(res.data) ? res.data : [res.data];
       for (const page of pages) {
@@ -68,100 +91,102 @@ export function FundamentalsScreen() {
     }
   }
 
-  const DISPLAY_KEYS = ['get_full_name', 'NSEcode', 'currentPrice', 'rsi', 'prev_rsi', 'qtr_changeP'];
-
-  function renderItem({ item, index }: { item: any; index: number }) {
-    const name = item.get_full_name || item.NSEcode || `#${index + 1}`;
-    return (
-      <View style={[styles.card, { backgroundColor: c.surface, borderColor: c.border }]}>
-        <Text style={[styles.cardTitle, { color: c.text }]}>{name}</Text>
-        {DISPLAY_KEYS.filter(k => k !== 'get_full_name' && item[k] !== undefined).map(key => (
-          <View key={key} style={styles.row}>
-            <Text style={[styles.key, { color: c.textSecondary }]}>{key}</Text>
-            <Text style={[styles.val, { color: c.text }]}>{String(item[key])}</Text>
-          </View>
-        ))}
-      </View>
-    );
-  }
-
   return (
-    <View style={[styles.container, { backgroundColor: c.background }]}>
-      {/* Group chips */}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipRow}>
-        {GROUPS.map(g => (
-          <TouchableOpacity
-            key={g.value}
-            style={[styles.chip, { borderColor: c.border, backgroundColor: group === g.value ? c.primary : c.surface }]}
-            onPress={() => setGroup(g.value)}
-          >
-            <Text style={{ color: group === g.value ? '#fff' : c.text, fontSize: 12 }}>{g.label}</Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
+    <ScrollView style={[styles.container, { backgroundColor: c.background }]} contentContainerStyle={styles.content}>
+      {/* ── Form card ────────────────────────────────────────────────────── */}
+      <View style={[styles.formCard, { backgroundColor: c.surface, borderColor: c.border }]}>
+        <Text style={[styles.formNote, { color: c.textSecondary }]}>
+          Trendlyne fundamentals screener. Select stock group and RSI query, then press Load.
+        </Text>
+        <View style={styles.controlsRow}>
+          <SelectInput
+            label="Group"
+            options={GROUP_OPTIONS}
+            value={group}
+            onChange={(v) => { setGroup(v); setData([]); }}
+          />
+          <SelectInput
+            label="RSI Query"
+            options={QUERY_OPTIONS}
+            value={query}
+            onChange={(v) => { setQuery(v); setData([]); }}
+          />
+          <View style={styles.btnGroup}>
+            <TouchableOpacity
+              style={[styles.btn, { backgroundColor: c.primary, opacity: loading ? 0.7 : 1 }]}
+              onPress={loadData}
+              disabled={loading}
+            >
+              {loading
+                ? <ActivityIndicator color="#fff" size="small" />
+                : <Text style={styles.btnText}>Load</Text>
+              }
+            </TouchableOpacity>
+            {data.length > 0 && (
+              <TouchableOpacity
+                style={[styles.btnSecondary, { borderColor: c.border, backgroundColor: c.surface }]}
+                onPress={() => setData([])}
+              >
+                <Text style={[styles.btnText, { color: c.text }]}>✕</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        </View>
+      </View>
 
-      {/* Query chips */}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipRow}>
-        {QUERIES.map(q => (
-          <TouchableOpacity
-            key={q.value}
-            style={[styles.chip, { borderColor: c.border, backgroundColor: query === q.value ? c.primary : c.surface }]}
-            onPress={() => setQuery(q.value)}
-          >
-            <Text style={{ color: query === q.value ? '#fff' : c.text, fontSize: 12 }}>{q.label}</Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
-
-      {/* Load button */}
-      <TouchableOpacity
-        style={[styles.loadBtn, { backgroundColor: c.primary, opacity: loading ? 0.7 : 1 }]}
-        onPress={loadData}
-        disabled={loading}
-      >
-        {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.loadBtnText}>Load</Text>}
-      </TouchableOpacity>
-
-      <FlatList
+      {/* ── DynamicTable ─────────────────────────────────────────────────── */}
+      <DynamicTable
         data={data}
-        keyExtractor={(_, i) => String(i)}
-        renderItem={renderItem}
-        contentContainerStyle={styles.list}
-        ListEmptyComponent={
-          !loading ? <Text style={[styles.empty, { color: c.textSecondary }]}>No data. Press Load.</Text> : null
-        }
+        schema={FUND_SCHEMA}
+        loading={loading}
+        onRefresh={loadData}
+
+        title="Fundamentals"
+        emptyText="Select group and RSI query, then press Load."
       />
-    </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  chipRow: { paddingHorizontal: SPACING.md, marginTop: SPACING.sm },
-  chip: {
-    borderWidth: 1,
-    borderRadius: 16,
-    paddingHorizontal: SPACING.md,
-    paddingVertical: 4,
-    marginRight: SPACING.sm,
-  },
-  loadBtn: {
+  content: { paddingBottom: SPACING.xl },
+  formCard: {
     margin: SPACING.md,
-    borderRadius: 10,
-    paddingVertical: SPACING.sm,
-    alignItems: 'center',
-  },
-  loadBtnText: { color: '#fff', fontWeight: '600', fontSize: 15 },
-  list: { paddingHorizontal: SPACING.md, paddingBottom: SPACING.xl },
-  card: {
-    borderRadius: 10,
+    marginBottom: SPACING.sm,
+    borderRadius: 12,
     borderWidth: 1,
     padding: SPACING.md,
-    marginBottom: SPACING.sm,
+    gap: SPACING.md,
   },
-  cardTitle: { fontSize: 15, fontWeight: '700', marginBottom: SPACING.sm },
-  row: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 2 },
-  key: { fontSize: 12, flex: 1 },
-  val: { fontSize: 12, flex: 1, textAlign: 'right' },
-  empty: { textAlign: 'center', marginTop: SPACING.xl, fontSize: 14 },
+  formNote: { fontSize: 12, lineHeight: 18 },
+  controlsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: SPACING.sm,
+    alignItems: 'flex-end',
+  },
+  btnGroup: {
+    flexDirection: 'row',
+    gap: SPACING.sm,
+    alignItems: 'flex-end',
+    paddingBottom: 1,
+  },
+  btn: {
+    borderRadius: 8,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: 9,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minWidth: 60,
+  },
+  btnSecondary: {
+    borderRadius: 8,
+    borderWidth: 1,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: 9,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  btnText: { color: '#fff', fontWeight: '600', fontSize: 14 },
 });

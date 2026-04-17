@@ -43,9 +43,19 @@ Go to: **https://expo.dev/accounts/mayurpatil60/projects/finvesto/builds**
 
 ## 🔨 Build Commands
 
+### Build Android development
+```bash
+eas build -p android --profile development
+```
+
+
 ### Build a new Android APK (needed only for native changes)
 ```bash
 eas build -p android --profile preview
+```
+or 
+```bash
+eas build -p android --profile preview --local
 ```
 > Required when: adding native packages, changing app icons/permissions, or updating native config.
 

@@ -4,7 +4,6 @@ import React, { useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
-  FlatList,
   ScrollView,
   StyleSheet,
   Text,
@@ -12,20 +11,39 @@ import {
   View,
 } from 'react-native';
 import { useTheme } from '../../../components/theme/ThemeProvider';
+import { SelectInput, SelectOption } from '../../../components/common/SelectInput';
+import { DynamicTable } from '../../../components/dynamic-table/DynamicTable';
 import { SPACING } from '../../../types/constants';
 import { marketsService } from '../services/markets.service';
 
-const TYPES = ['default', 'momentum'];
-const SEGMENTS = ['cash', 'futures', 'indices', 'etf'];
-const TIMEFRAMES = ['daily', 'weekly', 'monthly', 'quarterly'];
+type InvType = 'default' | 'momentum';
+type InvSegment = 'cash' | 'futures' | 'indices' | 'etf';
+type InvTimeframe = 'daily' | 'weekly' | 'monthly' | 'quarterly';
+
+const TYPE_OPTIONS: SelectOption<InvType>[] = [
+  { label: 'Default', value: 'default' },
+  { label: 'Momentum', value: 'momentum' },
+];
+const SEGMENT_OPTIONS: SelectOption<InvSegment>[] = [
+  { label: 'Cash', value: 'cash' },
+  { label: 'Futures', value: 'futures' },
+  { label: 'Indices', value: 'indices' },
+  { label: 'ETF', value: 'etf' },
+];
+const TIMEFRAME_OPTIONS: SelectOption<InvTimeframe>[] = [
+  { label: 'Daily', value: 'daily' },
+  { label: 'Weekly', value: 'weekly' },
+  { label: 'Monthly', value: 'monthly' },
+  { label: 'Quarterly', value: 'quarterly' },
+];
 
 export function InvestmentsScreen() {
   const { theme } = useTheme();
   const c = theme.colors;
 
-  const [type, setType] = useState(TYPES[0]);
-  const [segment, setSegment] = useState(SEGMENTS[0]);
-  const [timeframe, setTimeframe] = useState(TIMEFRAMES[0]);
+  const [type, setType] = useState<InvType>('default');
+  const [segment, setSegment] = useState<InvSegment>('cash');
+  const [timeframe, setTimeframe] = useState<InvTimeframe>('daily');
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<any[]>([]);
 
@@ -42,104 +60,107 @@ export function InvestmentsScreen() {
     }
   }
 
-  function ChipRow({ items, selected, onSelect }: { items: string[]; selected: string; onSelect: (v: string) => void }) {
-    return (
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipRow}>
-        {items.map(item => (
-          <TouchableOpacity
-            key={item}
-            style={[styles.chip, { borderColor: c.border, backgroundColor: selected === item ? c.primary : c.surface }]}
-            onPress={() => onSelect(item)}
-          >
-            <Text style={{ color: selected === item ? '#fff' : c.text, fontSize: 12, textTransform: 'capitalize' }}>{item}</Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
-    );
-  }
-
-  function renderItem({ item, index }: { item: any; index: number }) {
-    const name = item.stock_name || item.ticker || item.name || `#${index + 1}`;
-    const keys = Object.keys(item).filter(k => !['stock_name', 'name'].includes(k) && item[k] !== null && item[k] !== undefined);
-    return (
-      <View style={[styles.card, { backgroundColor: c.surface, borderColor: c.border }]}>
-        <Text style={[styles.cardTitle, { color: c.text }]}>{name}</Text>
-        {keys.slice(0, 6).map(key => (
-          <View key={key} style={styles.row}>
-            <Text style={[styles.key, { color: c.textSecondary }]}>{key}</Text>
-            <Text style={[styles.val, { color: c.text }]}>{String(item[key])}</Text>
-          </View>
-        ))}
-      </View>
-    );
-  }
-
   return (
-    <View style={[styles.container, { backgroundColor: c.background }]}>
-      <Text style={[styles.label, { color: c.textSecondary }]}>TYPE</Text>
-      <ChipRow items={TYPES} selected={type} onSelect={setType} />
+    <ScrollView style={[styles.container, { backgroundColor: c.background }]} contentContainerStyle={styles.content}>
+      {/* ── Form card ──────────────────────────────────────────────────── */}
+      <View style={[styles.formCard, { backgroundColor: c.surface, borderColor: c.border }]}>
+        <Text style={[styles.formNote, { color: c.textSecondary }]}>
+          Chartink backtest investments. Select type, segment and timeframe, then press Load.
+        </Text>
+        <View style={styles.controlsRow}>
+          <SelectInput
+            label="Type"
+            options={TYPE_OPTIONS}
+            value={type}
+            onChange={(v) => { setType(v); setData([]); }}
+          />
+          <SelectInput
+            label="Segment"
+            options={SEGMENT_OPTIONS}
+            value={segment}
+            onChange={(v) => { setSegment(v); setData([]); }}
+          />
+          <SelectInput
+            label="Timeframe"
+            options={TIMEFRAME_OPTIONS}
+            value={timeframe}
+            onChange={(v) => { setTimeframe(v); setData([]); }}
+          />
+          <View style={styles.btnGroup}>
+            <TouchableOpacity
+              style={[styles.btn, { backgroundColor: c.primary, opacity: loading ? 0.7 : 1 }]}
+              onPress={loadData}
+              disabled={loading}
+            >
+              {loading
+                ? <ActivityIndicator color="#fff" size="small" />
+                : <Text style={styles.btnText}>Load</Text>
+              }
+            </TouchableOpacity>
+            {data.length > 0 && (
+              <TouchableOpacity
+                style={[styles.btnSecondary, { borderColor: c.border, backgroundColor: c.surface }]}
+                onPress={() => setData([])}
+              >
+                <Text style={[styles.btnText, { color: c.text }]}>✕</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        </View>
+      </View>
 
-      <Text style={[styles.label, { color: c.textSecondary }]}>SEGMENT</Text>
-      <ChipRow items={SEGMENTS} selected={segment} onSelect={setSegment} />
-
-      <Text style={[styles.label, { color: c.textSecondary }]}>TIMEFRAME</Text>
-      <ChipRow items={TIMEFRAMES} selected={timeframe} onSelect={setTimeframe} />
-
-      <TouchableOpacity
-        style={[styles.loadBtn, { backgroundColor: c.primary, opacity: loading ? 0.7 : 1 }]}
-        onPress={loadData}
-        disabled={loading}
-      >
-        {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.loadBtnText}>Load</Text>}
-      </TouchableOpacity>
-
-      <FlatList
+      {/* ── DynamicTable ──────────────────────────────────────────────────── */}
+      <DynamicTable
         data={data}
-        keyExtractor={(_, i) => String(i)}
-        renderItem={renderItem}
-        contentContainerStyle={styles.list}
-        ListEmptyComponent={
-          !loading ? <Text style={[styles.empty, { color: c.textSecondary }]}>No data. Select filters and press Load.</Text> : null
-        }
+        loading={loading}
+        onRefresh={loadData}
+
+        title="Investments"
+        emptyText="Select type, segment and timeframe, then press Load."
       />
-    </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  label: {
-    fontSize: 11,
-    fontWeight: '700',
-    letterSpacing: 1.1,
-    marginTop: SPACING.md,
-    marginLeft: SPACING.md,
-  },
-  chipRow: { paddingHorizontal: SPACING.md, marginTop: SPACING.xs },
-  chip: {
-    borderWidth: 1,
-    borderRadius: 16,
-    paddingHorizontal: SPACING.md,
-    paddingVertical: 4,
-    marginRight: SPACING.sm,
-  },
-  loadBtn: {
+  content: { paddingBottom: SPACING.xl },
+  formCard: {
     margin: SPACING.md,
-    borderRadius: 10,
-    paddingVertical: SPACING.sm,
-    alignItems: 'center',
-  },
-  loadBtnText: { color: '#fff', fontWeight: '600', fontSize: 15 },
-  list: { paddingHorizontal: SPACING.md, paddingBottom: SPACING.xl },
-  card: {
-    borderRadius: 10,
+    marginBottom: SPACING.sm,
+    borderRadius: 12,
     borderWidth: 1,
     padding: SPACING.md,
-    marginBottom: SPACING.sm,
+    gap: SPACING.md,
   },
-  cardTitle: { fontSize: 15, fontWeight: '700', marginBottom: SPACING.sm },
-  row: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 2 },
-  key: { fontSize: 12, flex: 1 },
-  val: { fontSize: 12, flex: 1, textAlign: 'right' },
-  empty: { textAlign: 'center', marginTop: SPACING.xl, fontSize: 14 },
+  formNote: { fontSize: 12, lineHeight: 18 },
+  controlsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: SPACING.sm,
+    alignItems: 'flex-end',
+  },
+  btnGroup: {
+    flexDirection: 'row',
+    gap: SPACING.sm,
+    alignItems: 'flex-end',
+    paddingBottom: 1,
+  },
+  btn: {
+    borderRadius: 8,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: 9,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minWidth: 60,
+  },
+  btnSecondary: {
+    borderRadius: 8,
+    borderWidth: 1,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: 9,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  btnText: { color: '#fff', fontWeight: '600', fontSize: 14 },
 });
