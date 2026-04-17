@@ -1,23 +1,46 @@
 // ─── Analysis Screen ──────────────────────────────────────────────────────────
 
-import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import React, { useState } from 'react';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppHeader } from '../../components/layout/AppHeader';
 import { useTheme } from '../../components/theme/ThemeProvider';
 import { SPACING } from '../../types/constants';
+import { OptionAnalysis } from './components/OptionAnalysis';
+import { OptionSearch } from './components/OptionSearch';
+import { OptionSelection } from './components/OptionSelection';
+import { PercentageChange } from './components/PercentageChange';
+
+type AnalysisTab = 'Analysis' | 'History' | 'Selection' | '% Change';
+const TABS: AnalysisTab[] = ['Analysis', 'History', 'Selection', '% Change'];
 
 export function AnalysisScreen() {
   const { theme } = useTheme();
   const c = theme.colors;
+  const [activeTab, setActiveTab] = useState<AnalysisTab>('Analysis');
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: c.background }]}>
       <AppHeader title="Analysis" />
-      <View style={styles.body}>
-        <Text style={[styles.placeholder, { color: c.textSecondary }]}>
-          Analysis coming soon…
-        </Text>
+
+      {/* Top tabs */}
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={[styles.tabBar, { borderBottomColor: c.border }]}>
+        {TABS.map(tab => (
+          <TouchableOpacity
+            key={tab}
+            style={[styles.tab, activeTab === tab && { borderBottomColor: c.primary, borderBottomWidth: 2 }]}
+            onPress={() => setActiveTab(tab)}
+          >
+            <Text style={[styles.tabText, { color: activeTab === tab ? c.primary : c.textSecondary }]}>{tab}</Text>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
+
+      <View style={styles.content}>
+        {activeTab === 'Analysis' && <OptionAnalysis />}
+        {activeTab === 'History' && <OptionSearch />}
+        {activeTab === 'Selection' && <OptionSelection />}
+        {activeTab === '% Change' && <PercentageChange />}
       </View>
     </SafeAreaView>
   );
@@ -25,13 +48,15 @@ export function AnalysisScreen() {
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1 },
-  body: {
-    flex: 1,
-    justifyContent: 'center',
+  tabBar: {
+    borderBottomWidth: 1,
+    flexGrow: 0,
+  },
+  tab: {
+    paddingVertical: SPACING.sm,
+    paddingHorizontal: SPACING.md,
     alignItems: 'center',
-    padding: SPACING.lg,
   },
-  placeholder: {
-    fontSize: 16,
-  },
+  tabText: { fontSize: 13, fontWeight: '600' },
+  content: { flex: 1 },
 });

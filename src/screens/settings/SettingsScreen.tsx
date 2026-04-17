@@ -3,15 +3,19 @@
 import React, { useState } from 'react';
 import { ActivityIndicator, Alert, ScrollView, StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import * as Updates from 'expo-updates';
 import { useTheme } from '../../components/theme/ThemeProvider';
 import { AppHeader } from '../../components/layout/AppHeader';
 import { APP_NAME, SPACING } from '../../types/constants';
+import { SettingsStackParamList } from '../../navigation/SettingsNavigator';
 
 export function SettingsScreen() {
   const { theme, isDark, setDark } = useTheme();
   const c = theme.colors;
   const [updating, setUpdating] = useState(false);
+  const navigation = useNavigation<NativeStackNavigationProp<SettingsStackParamList>>();
 
   async function checkForUpdate() {
     if (__DEV__) {
@@ -60,6 +64,27 @@ export function SettingsScreen() {
               thumbColor={c.switchThumb}
             />
           </View>
+        </View>
+
+        {/* Tools Section */}
+        <Text style={[styles.sectionLabel, { color: c.textSecondary }]}>TOOLS</Text>
+
+        <View style={[styles.card, { backgroundColor: c.surface, borderColor: c.border }]}>
+          <TouchableOpacity style={styles.row} onPress={() => navigation.navigate('Config')}>
+            <View style={styles.rowLeft}>
+              <Text style={[styles.rowTitle, { color: c.text }]}>Config</Text>
+              <Text style={[styles.rowSubtitle, { color: c.textSecondary }]}>Set expiry date and app config</Text>
+            </View>
+            <Text style={[styles.rowValue, { color: c.textSecondary }]}>›</Text>
+          </TouchableOpacity>
+          <View style={[styles.divider, { backgroundColor: c.border }]} />
+          <TouchableOpacity style={styles.row} onPress={() => navigation.navigate('Cleanup')}>
+            <View style={styles.rowLeft}>
+              <Text style={[styles.rowTitle, { color: c.text }]}>Cleanup Analysis Data</Text>
+              <Text style={[styles.rowSubtitle, { color: c.textSecondary }]}>Delete analysis records by expiry</Text>
+            </View>
+            <Text style={[styles.rowValue, { color: c.textSecondary }]}>›</Text>
+          </TouchableOpacity>
         </View>
 
         {/* Updates Section */}

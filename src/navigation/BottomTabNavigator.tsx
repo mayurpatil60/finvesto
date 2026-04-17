@@ -3,17 +3,15 @@
 import React from 'react';
 import { Text } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { HomeScreen } from '../screens/home/HomeScreen';
 import { AnalysisScreen } from '../screens/analysis/AnalysisScreen';
 import { MarketsScreen } from '../screens/markets/MarketsScreen';
 import { ToolsScreen } from '../screens/tools/ToolsScreen';
-import { SettingsScreen } from '../screens/settings/SettingsScreen';
+import { SettingsNavigator } from './SettingsNavigator';
 import { useTheme } from '../components/theme/ThemeProvider';
 
 export type BottomTabParamList = {
   Analysis: undefined;
   Markets: undefined;
-  Home: undefined;
   Tools: undefined;
   Settings: undefined;
 };
@@ -23,7 +21,6 @@ const Tab = createBottomTabNavigator<BottomTabParamList>();
 const TAB_ICONS: Record<keyof BottomTabParamList, string> = {
   Analysis: '📊',
   Markets: '📈',
-  Home: '🏠',
   Tools: '🔧',
   Settings: '⚙️',
 };
@@ -34,7 +31,7 @@ export function BottomTabNavigator() {
 
   return (
     <Tab.Navigator
-      initialRouteName="Home"
+      initialRouteName="Analysis"
       screenOptions={({ route }) => ({
         headerShown: false,
         tabBarShowLabel: false,
@@ -57,9 +54,8 @@ export function BottomTabNavigator() {
     >
       <Tab.Screen name="Analysis" component={AnalysisScreen} />
       <Tab.Screen name="Markets" component={MarketsScreen} />
-      <Tab.Screen name="Home" component={HomeScreen} />
       <Tab.Screen name="Tools" component={ToolsScreen} />
-      <Tab.Screen name="Settings" component={SettingsScreen} />
+      <Tab.Screen name="Settings" component={SettingsNavigator} />
     </Tab.Navigator>
   );
 }
