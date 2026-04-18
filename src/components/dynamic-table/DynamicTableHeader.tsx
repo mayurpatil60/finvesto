@@ -122,7 +122,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
   },
   headerCell: {
-    paddingHorizontal: SPACING.xs,
+    paddingHorizontal: SPACING.sm,
     paddingVertical: 8,
     flexDirection: 'row',
     alignItems: 'center',

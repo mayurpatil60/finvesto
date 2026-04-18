@@ -15,6 +15,7 @@ import { SelectInput, SelectOption } from '../../../components/common/SelectInpu
 import { DynamicTable } from '../../../components/dynamic-table/DynamicTable';
 import { DynamicColumn } from '../../../components/dynamic-table/types';
 import { SPACING } from '../../../types/constants';
+import { CollapsibleCard } from '../../../components/common/CollapsibleCard';
 import { marketsService } from '../services/markets.service';
 
 type GroupValue = 'all' | 'fno-stocks' | 'only-etfs' | 'sme-stocks' | 'non-sme-stocks';
@@ -70,7 +71,9 @@ export function FundamentalsScreen() {
     setLoading(true);
     setData([]);
     try {
-      const res = await marketsService.getFundamentals({ group, query });
+      const params: Record<string, string> = { groupName: group, query };
+      if (group === 'fno-stocks') params['groupType'] = 'others';
+      const res = await marketsService.getFundamentals(params);
       const flat: any[] = [];
       const pages = Array.isArray(res.data) ? res.data : [res.data];
       for (const page of pages) {
@@ -94,7 +97,7 @@ export function FundamentalsScreen() {
   return (
     <ScrollView style={[styles.container, { backgroundColor: c.background }]} contentContainerStyle={styles.content}>
       {/* ── Form card ────────────────────────────────────────────────────── */}
-      <View style={[styles.formCard, { backgroundColor: c.surface, borderColor: c.border }]}>
+      <CollapsibleCard title="Fundamentals">
         <Text style={[styles.formNote, { color: c.textSecondary }]}>
           Trendlyne fundamentals screener. Select stock group and RSI query, then press Load.
         </Text>
@@ -132,7 +135,7 @@ export function FundamentalsScreen() {
             )}
           </View>
         </View>
-      </View>
+      </CollapsibleCard>
 
       {/* ── DynamicTable ─────────────────────────────────────────────────── */}
       <DynamicTable
@@ -150,15 +153,7 @@ export function FundamentalsScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  content: { paddingBottom: SPACING.xl },
-  formCard: {
-    margin: SPACING.md,
-    marginBottom: SPACING.sm,
-    borderRadius: 12,
-    borderWidth: 1,
-    padding: SPACING.md,
-    gap: SPACING.md,
-  },
+  content: { paddingTop: SPACING.md, paddingBottom: SPACING.xl },
   formNote: { fontSize: 12, lineHeight: 18 },
   controlsRow: {
     flexDirection: 'row',
@@ -175,7 +170,7 @@ const styles = StyleSheet.create({
   btn: {
     borderRadius: 8,
     paddingHorizontal: SPACING.md,
-    paddingVertical: 9,
+    paddingVertical: 6,
     alignItems: 'center',
     justifyContent: 'center',
     minWidth: 60,
@@ -184,9 +179,9 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     borderWidth: 1,
     paddingHorizontal: SPACING.md,
-    paddingVertical: 9,
+    paddingVertical: 6,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  btnText: { color: '#fff', fontWeight: '600', fontSize: 14 },
+  btnText: { color: '#fff', fontWeight: '600', fontSize: 13 },
 });

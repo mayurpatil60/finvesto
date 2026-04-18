@@ -9,6 +9,7 @@ import {
   View,
 } from 'react-native';
 import { useTheme } from '../../../components/theme/ThemeProvider';
+import { CollapsibleCard } from '../../../components/common/CollapsibleCard';
 import { SPACING } from '../../../types/constants';
 
 const PERCENTAGE_OPTIONS = [
@@ -51,9 +52,8 @@ export function PremiumCalculator() {
   };
 
   return (
-    <View style={[styles.card, { backgroundColor: c.surface, borderColor: c.border }]}>
-      {/* Header */}
-      <Text style={[styles.title, { color: c.text }]}>Premium Calculator</Text>
+    <CollapsibleCard title="Premium Calculator">
+      {/* Subtitle */}
       <Text style={[styles.subtitle, { color: c.textSecondary }]}>
         Enter a price and select a percentage to calculate expected call and put premium values.
       </Text>
@@ -109,12 +109,14 @@ export function PremiumCalculator() {
           <Text style={styles.btnText}>Submit</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity
-          style={[styles.btn, styles.btnSecondary, { borderColor: c.border }]}
-          onPress={reset}
-        >
-          <Text style={[styles.btnText, { color: c.text }]}>✕</Text>
-        </TouchableOpacity>
+        {(callResult !== null || price.trim() !== '') && (
+          <TouchableOpacity
+            style={[styles.btn, styles.btnSecondary, { borderColor: c.border }]}
+            onPress={reset}
+          >
+            <Text style={[styles.btnText, { color: c.text }]}>✕</Text>
+          </TouchableOpacity>
+        )}
       </View>
 
       {/* Result */}
@@ -131,25 +133,14 @@ export function PremiumCalculator() {
           </View>
         </View>
       )}
-    </View>
+    </CollapsibleCard>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
-    borderRadius: 12,
-    borderWidth: 1,
-    padding: SPACING.md,
-    marginBottom: SPACING.md,
-  },
-  title: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: SPACING.xs,
-  },
   subtitle: {
     fontSize: 12,
-    marginBottom: SPACING.md,
+    marginBottom: SPACING.sm,
   },
   inputGroup: {
     marginBottom: SPACING.sm,
@@ -164,7 +155,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     paddingHorizontal: SPACING.sm,
     paddingVertical: SPACING.sm,
-    fontSize: 14,
+    fontSize: 13,
   },
   pctRow: {
     flexDirection: 'row',
@@ -206,7 +197,7 @@ const styles = StyleSheet.create({
   },
   btnText: {
     color: '#FFFFFF',
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '500',
   },
   resultRow: {

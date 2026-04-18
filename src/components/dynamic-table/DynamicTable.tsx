@@ -16,7 +16,9 @@ import React, { useCallback, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
+  Modal,
   RefreshControl,
+  SafeAreaView,
   ScrollView,
   Share,
   StyleSheet,
@@ -25,6 +27,7 @@ import {
   useWindowDimensions,
   View,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
 import { useTheme } from '../theme/ThemeProvider';
 import { SPACING } from '../../types/constants';
@@ -142,6 +145,11 @@ export function DynamicTable({
 
   // ── Column sheet ─────────────────────────────────────────────────────────────
   const [showColSheet, setShowColSheet] = useState(false);
+
+  // ── View mode ─────────────────────────────────────────────────────────────────
+  const [viewMode, setViewMode] = useState<'table' | 'card'>('table');
+  const [fullscreen, setFullscreen] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
 
   // ── Refresh ───────────────────────────────────────────────────────────────────
   const [refreshing, setRefreshing] = useState(false);
@@ -269,81 +277,26 @@ export function DynamicTable({
   }, [visibleCols, rawTotalWidth, availableWidth]);
   const totalWidth = expandedCols.reduce((sum, col) => sum + (col.width ?? DEFAULT_COL_WIDTH), 0);
 
-  // ── Render ────────────────────────────────────────────────────────────────────
-  // When there's no data (and not loading), show a minimal empty state —
-  // no toolbar, no header, no paginator.
-  if (!loading && data.length === 0) {
-    return (
-      <View style={[styles.emptyState, { backgroundColor: 'transparent' }]}>
-        <Text style={[styles.emptyStateText, { color: c.textSecondary }]}>{emptyText}</Text>
-      </View>
-    );
-  }
+  // ── Render helpers ────────────────────────────────────────────────────────────
+  function renderTableContent(isFullscreen = false) {
+    const maxH = isFullscreen
+      ? undefined
+      : pageSize * ROW_HEIGHT;
 
-  return (
-    <View style={[styles.panel, { backgroundColor: c.surface, borderColor: c.border }]}>
-      {/* Toolbar */}
-      <DynamicTableToolbar
-        globalFilter={globalFilter}
-        onGlobalFilterChange={v => { setGlobalFilter(v); setPage(0); }}
-        showFilters={showFilters}
-        onToggleFilters={() => setShowFilters(f => !f)}
-        onRefresh={onRefresh ? handleRefresh : undefined}
-        onColumns={() => setShowColSheet(true)}
-        onExport={exportCSV}
-        resultCount={totalRows}
-        totalCount={data.length}
-        hasActiveFilters={hasActiveFilters}
-        loading={loading}
-      />
-
-      {/* Horizontally scrollable table */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator
-        style={styles.hScroll}
-        contentContainerStyle={{ minWidth: totalWidth }}
-      >
-        <View style={{ width: Math.max(totalWidth, 1) }}>
-          {/* Sticky header */}
-          <DynamicTableHeader
-            columns={expandedCols}
-            sorts={sorts}
-            colFilters={colFilters}
-            showFilters={showFilters}
-            onSort={handleSort}
-            onColFilter={setColFilter}
-            onCopyColumn={copyColumn}
-          />
-
-          {/* Rows via FlatList — bounded height so toolbar+paginator stay sticky */}
-          <FlatList
-            data={pageRows}
-            keyExtractor={(_, i) => String(i)}
-            scrollEnabled
-            style={{ maxHeight: pageSize * ROW_HEIGHT }}
-            removeClippedSubviews
-            maxToRenderPerBatch={20}
-            windowSize={5}
-            renderItem={({ item, index }) => (
-              <View
-                style={[
-                  styles.row,
-                  {
-                    backgroundColor: index % 2 === 0 ? c.surface : c.background,
-                    borderBottomColor: c.border,
-                  },
-                ]}
-              >
-                {expandedCols.map(col => {
-                  const val = item[col.field];
-                  const display = val !== null && val !== undefined ? String(val) : '—';
-                  const color = col.colorFn ? (col.colorFn(val, item) ?? c.text) : c.text;
-                  return (
-                    <View key={col.field} style={[styles.cell, { width: col.width ?? DEFAULT_COL_WIDTH }]}>
-                      <Text style={[styles.cellText, { color, flex: col.copyEnabled ? 1 : undefined }]} numberOfLines={2}>
-                        {display}
-                      </Text>
+    if (viewMode === 'card') {
+      return (
+        <ScrollView style={{ flex: isFullscreen ? 1 : undefined, maxHeight: isFullscreen ? undefined : pageSize * (ROW_HEIGHT * 3) }}>
+          {pageRows.map((item, index) => (
+            <View key={index} style={[styles.cardItem, { backgroundColor: index % 2 === 0 ? c.surface : c.background, borderColor: c.border }]}>
+              {expandedCols.map(col => {
+                const val = item[col.field];
+                const display = val !== null && val !== undefined ? String(val) : '—';
+                const color = col.colorFn ? (col.colorFn(val, item) ?? c.text) : c.text;
+                return (
+                  <View key={col.field} style={styles.cardRow}>
+                    <Text style={[styles.cardLabel, { color: c.textSecondary }]}>{col.header}</Text>
+                    <View style={styles.cardValueRow}>
+                      <Text style={[styles.cardValue, { color }]}>{display}</Text>
                       {col.copyEnabled && (
                         <TouchableOpacity
                           hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
@@ -353,49 +306,147 @@ export function DynamicTable({
                             catch { await Share.share({ message: text }); }
                           }}
                         >
-                          <Text style={{ color: c.textSecondary, fontSize: 11, paddingLeft: 3 }}>⎘</Text>
+                          <Text style={{ color: c.textSecondary, fontSize: 11, paddingLeft: 4 }}>⎘</Text>
                         </TouchableOpacity>
                       )}
                     </View>
-                  );
-                })}
+                  </View>
+                );
+              })}
+            </View>
+          ))}
+          {loading && <ActivityIndicator color={c.primary} style={{ padding: SPACING.md }} />}
+        </ScrollView>
+      );
+    }
+
+    return (
+      <>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator
+          style={styles.hScroll}
+          contentContainerStyle={{ minWidth: totalWidth }}
+        >
+          <View style={{ width: Math.max(totalWidth, 1) }}>
+            <DynamicTableHeader
+              columns={expandedCols}
+              sorts={sorts}
+              colFilters={colFilters}
+              showFilters={showFilters}
+              onSort={handleSort}
+              onColFilter={setColFilter}
+              onCopyColumn={copyColumn}
+            />
+            <FlatList
+              data={pageRows}
+              keyExtractor={(_, i) => String(i)}
+              scrollEnabled
+              style={{ maxHeight: maxH }}
+              removeClippedSubviews
+              maxToRenderPerBatch={20}
+              windowSize={5}
+              renderItem={({ item, index }) => (
+                <View
+                  style={[
+                    styles.row,
+                    {
+                      backgroundColor: index % 2 === 0 ? c.surface : c.background,
+                      borderBottomColor: c.border,
+                    },
+                  ]}
+                >
+                  {expandedCols.map(col => {
+                    const val = item[col.field];
+                    const display = val !== null && val !== undefined ? String(val) : '—';
+                    const color = col.colorFn ? (col.colorFn(val, item) ?? c.text) : c.text;
+                    return (
+                      <View key={col.field} style={[styles.cell, { width: col.width ?? DEFAULT_COL_WIDTH }]}>
+                        <Text style={[styles.cellText, { color, flex: col.copyEnabled ? 1 : undefined }]} numberOfLines={2}>
+                          {display}
+                        </Text>
+                        {col.copyEnabled && (
+                          <TouchableOpacity
+                            hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+                            onPress={async () => {
+                              const text = (col.copyPrefix ?? '') + display;
+                              try { await Clipboard.setStringAsync(text); }
+                              catch { await Share.share({ message: text }); }
+                            }}
+                          >
+                            <Text style={{ color: c.textSecondary, fontSize: 11, paddingLeft: 3 }}>⎘</Text>
+                          </TouchableOpacity>
+                        )}
+                      </View>
+                    );
+                  })}
+                </View>
+              )}
+              refreshControl={
+                onRefresh ? (
+                  <RefreshControl
+                    refreshing={refreshing}
+                    onRefresh={handleRefresh}
+                    tintColor={c.primary}
+                  />
+                ) : undefined
+              }
+              ListEmptyComponent={
+                !loading ? (
+                  <View style={[styles.emptyRow, { width: totalWidth }]}>
+                    <Text style={[styles.emptyText, { color: c.textSecondary }]}>{emptyText}</Text>
+                  </View>
+                ) : null
+              }
+            />
+            {loading && (
+              <View style={[styles.loadingRow, { width: totalWidth }]}>
+                <ActivityIndicator color={c.primary} />
               </View>
             )}
-            refreshControl={
-              onRefresh ? (
-                <RefreshControl
-                  refreshing={refreshing}
-                  onRefresh={handleRefresh}
-                  tintColor={c.primary}
-                />
-              ) : undefined
-            }
-            ListEmptyComponent={
-              !loading ? (
-                <View style={[styles.emptyRow, { width: totalWidth }]}>
-                  <Text style={[styles.emptyText, { color: c.textSecondary }]}>{emptyText}</Text>
-                </View>
-              ) : null
-            }
-          />
+          </View>
+        </ScrollView>
+        {loading && (
+          <View style={styles.loadingOverlay} pointerEvents="none">
+            <ActivityIndicator size="large" color={c.primary} />
+          </View>
+        )}
+      </>
+    );
+  }
 
-          {/* Loading overlay */}
-          {loading && (
-            <View style={[styles.loadingRow, { width: totalWidth }]}>
-              <ActivityIndicator color={c.primary} />
-            </View>
-          )}
-        </View>
-      </ScrollView>
+  // ── Render ────────────────────────────────────────────────────────────────────
+  if (!loading && data.length === 0) {
+    return (
+      <View style={[styles.emptyState, { backgroundColor: 'transparent' }]}>
+        <Text style={[styles.emptyStateText, { color: c.textSecondary }]}>{emptyText}</Text>
+      </View>
+    );
+  }
 
-      {/* Full-width loading overlay (centered over visible panel) */}
-      {loading && (
-        <View style={styles.loadingOverlay} pointerEvents="none">
-          <ActivityIndicator size="large" color={c.primary} />
-        </View>
-      )}
+  return (<>
+    <View style={[styles.panel, { backgroundColor: c.surface, borderColor: c.border }]}>
+      <DynamicTableToolbar
+        globalFilter={globalFilter}
+        onGlobalFilterChange={v => { setGlobalFilter(v); setPage(0); }}
+        showFilters={showFilters}
+        onToggleFilters={() => setShowFilters(f => !f)}
+        onRefresh={onRefresh ? handleRefresh : undefined}
+        onColumns={() => setShowColSheet(true)}
+        onExport={exportCSV}
+        hasActiveFilters={hasActiveFilters}
+        loading={loading}
+        viewMode={viewMode}
+        onToggleViewMode={() => setViewMode(m => m === 'table' ? 'card' : 'table')}
+        onToggleFullscreen={() => setFullscreen(true)}
+        collapsed={collapsed}
+        onToggleCollapsed={() => setCollapsed(v => !v)}
+      />
 
-      {/* Paginator */}
+      {!collapsed && (
+        <>
+      {renderTableContent()}
+
       <DynamicTablePaginator
         page={safePage}
         totalPages={totalPages}
@@ -406,15 +457,57 @@ export function DynamicTable({
         onPageSizeChange={size => { setPageSize(size); setPage(0); }}
       />
 
-      {/* Column visibility + reorder sheet */}
       <DynamicTableColumnSheet
         visible={showColSheet}
         columns={colDefs}
         onClose={() => setShowColSheet(false)}
         onChange={setColDefs}
       />
+        </>
+      )}
     </View>
-  );
+
+    {fullscreen && (
+      <Modal visible animationType="slide" onRequestClose={() => setFullscreen(false)}>
+        <SafeAreaView style={{ flex: 1, backgroundColor: c.background }}>
+          <View style={[styles.panel, { flex: 1, marginHorizontal: 0, marginBottom: 0, borderRadius: 0, borderWidth: 0 }]}>
+            <DynamicTableToolbar
+              globalFilter={globalFilter}
+              onGlobalFilterChange={v => { setGlobalFilter(v); setPage(0); }}
+              showFilters={showFilters}
+              onToggleFilters={() => setShowFilters(f => !f)}
+              onRefresh={onRefresh ? handleRefresh : undefined}
+              onColumns={() => setShowColSheet(true)}
+              onExport={exportCSV}
+              hasActiveFilters={hasActiveFilters}
+              loading={loading}
+              viewMode={viewMode}
+              onToggleViewMode={() => setViewMode(m => m === 'table' ? 'card' : 'table')}
+              onToggleFullscreen={() => setFullscreen(false)}
+              collapsed={false}
+              onToggleCollapsed={() => {}}
+            />
+            {renderTableContent(true)}
+            <DynamicTablePaginator
+              page={safePage}
+              totalPages={totalPages}
+              pageSize={pageSize}
+              pageSizeOptions={pageSizeOptions}
+              totalRows={totalRows}
+              onPageChange={setPage}
+              onPageSizeChange={size => { setPageSize(size); setPage(0); }}
+            />
+            <DynamicTableColumnSheet
+              visible={showColSheet}
+              columns={colDefs}
+              onClose={() => setShowColSheet(false)}
+              onChange={setColDefs}
+            />
+          </View>
+        </SafeAreaView>
+      </Modal>
+    )}
+  </>);
 }
 
 const styles = StyleSheet.create({
@@ -434,7 +527,7 @@ const styles = StyleSheet.create({
   cell: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: SPACING.xs,
+    paddingHorizontal: SPACING.sm,
     paddingVertical: 7,
     borderRightWidth: StyleSheet.hairlineWidth,
     borderRightColor: 'rgba(0,0,0,0.08)',
@@ -465,4 +558,20 @@ const styles = StyleSheet.create({
     fontSize: 14,
     textAlign: 'center',
   },
+  cardItem: {
+    marginHorizontal: SPACING.md,
+    marginBottom: SPACING.sm,
+    borderRadius: 10,
+    borderWidth: 1,
+    padding: SPACING.sm,
+  },
+  cardRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 3,
+  },
+  cardLabel: { fontSize: 11, flex: 1 },
+  cardValueRow: { flexDirection: 'row', alignItems: 'center', flex: 1.5, justifyContent: 'flex-end' },
+  cardValue: { fontSize: 12, textAlign: 'right' },
 });

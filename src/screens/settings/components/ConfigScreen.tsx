@@ -126,7 +126,7 @@ const styles = StyleSheet.create({
     gap: SPACING.sm,
   },
   label: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '500',
   },
   input: {

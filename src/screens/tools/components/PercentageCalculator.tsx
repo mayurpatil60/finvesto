@@ -9,6 +9,7 @@ import {
   View,
 } from 'react-native';
 import { useTheme } from '../../../components/theme/ThemeProvider';
+import { CollapsibleCard } from '../../../components/common/CollapsibleCard';
 import { SPACING } from '../../../types/constants';
 
 export function PercentageCalculator() {
@@ -40,9 +41,8 @@ export function PercentageCalculator() {
   };
 
   return (
-    <View style={[styles.card, { backgroundColor: c.surface, borderColor: c.border }]}>
-      {/* Header */}
-      <Text style={[styles.title, { color: c.text }]}>Percentage Calculator</Text>
+    <CollapsibleCard title="Percentage Calculator">
+      {/* Subtitle */}
       <Text style={[styles.subtitle, { color: c.textSecondary }]}>
         Enter two values to calculate the percentage change between them.
       </Text>
@@ -84,36 +84,27 @@ export function PercentageCalculator() {
           <Text style={styles.btnText}>Submit</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity
-          style={[styles.btn, styles.btnSecondary, { borderColor: c.border }]}
-          onPress={reset}
-        >
-          <Text style={[styles.btnText, { color: c.text }]}>✕</Text>
-        </TouchableOpacity>
+        {(result !== null || value1 !== '' || value2 !== '') && (
+          <TouchableOpacity
+            style={[styles.btn, styles.btnSecondary, { borderColor: c.border }]}
+            onPress={reset}
+          >
+            <Text style={[styles.btnText, { color: c.text }]}>✕</Text>
+          </TouchableOpacity>
+        )}
 
         {result !== null && (
           <Text style={[styles.result, { color: c.primary }]}>{result}%</Text>
         )}
       </View>
-    </View>
+    </CollapsibleCard>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
-    borderRadius: 12,
-    borderWidth: 1,
-    padding: SPACING.md,
-    marginBottom: SPACING.md,
-  },
-  title: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: SPACING.xs,
-  },
   subtitle: {
     fontSize: 12,
-    marginBottom: SPACING.md,
+    marginBottom: SPACING.sm,
   },
   inputRow: {
     flexDirection: 'row',
@@ -133,7 +124,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     paddingHorizontal: SPACING.sm,
     paddingVertical: SPACING.sm,
-    fontSize: 14,
+    fontSize: 13,
   },
   actionRow: {
     flexDirection: 'row',
@@ -161,7 +152,7 @@ const styles = StyleSheet.create({
   },
   btnText: {
     color: '#FFFFFF',
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '500',
   },
   result: {

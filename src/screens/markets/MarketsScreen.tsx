@@ -1,7 +1,7 @@
 // ─── Markets Screen ───────────────────────────────────────────────────────────
 
-import React, { useState } from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React, { useRef, useState } from 'react';
+import { PanResponder, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppHeader } from '../../components/layout/AppHeader';
 import { useTheme } from '../../components/theme/ThemeProvider';
@@ -17,6 +17,21 @@ export function MarketsScreen() {
   const { theme } = useTheme();
   const c = theme.colors;
   const [activeTab, setActiveTab] = useState<MarketTab>('IPO');
+  const activeTabRef = useRef(activeTab);
+  activeTabRef.current = activeTab;
+
+  const swipePanResponder = useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponder: (_, g) =>
+        Math.abs(g.dx) > 20 && Math.abs(g.dx) > Math.abs(g.dy) * 1.5,
+      onPanResponderRelease: (_, g) => {
+        if (Math.abs(g.dx) < 40) return;
+        const idx = TABS.indexOf(activeTabRef.current);
+        if (g.dx < 0 && idx < TABS.length - 1) setActiveTab(TABS[idx + 1]);
+        if (g.dx > 0 && idx > 0) setActiveTab(TABS[idx - 1]);
+      },
+    }),
+  ).current;
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: c.background }]}>
@@ -38,7 +53,7 @@ export function MarketsScreen() {
       </View>
 
       {/* Active component */}
-      <View style={styles.content}>
+      <View style={styles.content} {...swipePanResponder.panHandlers}>
         {activeTab === 'IPO' && <IpoScreen />}
         {activeTab === 'Fundamentals' && <FundamentalsScreen />}
         {activeTab === 'Investments' && <InvestmentsScreen />}

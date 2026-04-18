@@ -16,6 +16,7 @@ import { useTheme } from '../../../components/theme/ThemeProvider';
 import { SPACING } from '../../../types/constants';
 import { DynamicTable } from '../../../components/dynamic-table/DynamicTable';
 import { DynamicColumn } from '../../../components/dynamic-table/types';
+import { CollapsibleCard } from '../../../components/common/CollapsibleCard';
 import { analysisService } from '../services/analysis.service';
 
 function pctColor(val: any): string | undefined {
@@ -28,7 +29,8 @@ function pctColor(val: any): string | undefined {
 function parseBatchDateTime(batchId: string): Date {
   const [datePart, timePartRaw] = batchId.split('_');
   const timePart = timePartRaw.trim().toUpperCase();
-  const match = timePart.match(/^(d{1,2}):(d{2})(AM|PM)$/);
+  const match = timePart.match(/^(\d{1,2}):(\d{2})(AM|PM)$/);
+  if (!match) return new Date(0);
   let hours = parseInt(match[1], 10);
   const minutes = parseInt(match[2], 10);
   if (match[3] === 'PM' && hours !== 12) hours += 12;
@@ -95,7 +97,7 @@ export function PercentageChange() {
 
   return (
     <ScrollView style={[styles.container, { backgroundColor: c.background }]} contentContainerStyle={styles.content}>
-      <View style={[styles.formCard, { backgroundColor: c.surface, borderColor: c.border }]}>
+      <CollapsibleCard title="% Change">
         <Text style={[styles.formNote, { color: c.textSecondary }]}>
           Track price changes over batches. Oldest record is base (0%), all others show % change from it.
         </Text>
@@ -131,7 +133,7 @@ export function PercentageChange() {
             )}
           </View>
         </View>
-      </View>
+      </CollapsibleCard>
       <DynamicTable
         data={rows}
         schema={SCHEMA}
@@ -146,13 +148,12 @@ export function PercentageChange() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  content: { paddingBottom: SPACING.xl },
-  formCard: { margin: SPACING.md, marginBottom: SPACING.sm, borderRadius: 12, borderWidth: 1, padding: SPACING.md, gap: SPACING.md },
+  content: { paddingTop: SPACING.md, paddingBottom: SPACING.xl },
   formNote: { fontSize: 12, lineHeight: 18 },
   controlsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: SPACING.sm, alignItems: 'flex-end' },
-  input: { borderWidth: 1, borderRadius: 8, paddingHorizontal: SPACING.md, paddingVertical: 9, fontSize: 14 },
+  input: { borderWidth: 1, borderRadius: 8, paddingHorizontal: SPACING.md, paddingVertical: 6, fontSize: 13 },
   btnGroup: { flexDirection: 'row', gap: SPACING.sm, alignItems: 'flex-end', paddingBottom: 1 },
-  btn: { borderRadius: 8, paddingHorizontal: SPACING.md, paddingVertical: 9, alignItems: 'center', justifyContent: 'center', minWidth: 60 },
-  btnSecondary: { borderRadius: 8, borderWidth: 1, paddingHorizontal: SPACING.md, paddingVertical: 9, alignItems: 'center', justifyContent: 'center' },
-  btnText: { color: '#fff', fontWeight: '600', fontSize: 14 },
+  btn: { borderRadius: 8, paddingHorizontal: SPACING.md, paddingVertical: 6, alignItems: 'center', justifyContent: 'center', minWidth: 60 },
+  btnSecondary: { borderRadius: 8, borderWidth: 1, paddingHorizontal: SPACING.md, paddingVertical: 6, alignItems: 'center', justifyContent: 'center' },
+  btnText: { color: '#fff', fontWeight: '600', fontSize: 13 },
 });

@@ -14,6 +14,7 @@ import { useTheme } from '../../../components/theme/ThemeProvider';
 import { SelectInput, SelectOption } from '../../../components/common/SelectInput';
 import { DynamicTable } from '../../../components/dynamic-table/DynamicTable';
 import { SPACING } from '../../../types/constants';
+import { CollapsibleCard } from '../../../components/common/CollapsibleCard';
 import { marketsService } from '../services/markets.service';
 
 type InvType = 'default' | 'momentum';
@@ -63,7 +64,7 @@ export function InvestmentsScreen() {
   return (
     <ScrollView style={[styles.container, { backgroundColor: c.background }]} contentContainerStyle={styles.content}>
       {/* ── Form card ──────────────────────────────────────────────────── */}
-      <View style={[styles.formCard, { backgroundColor: c.surface, borderColor: c.border }]}>
+      <CollapsibleCard title="Investments">
         <Text style={[styles.formNote, { color: c.textSecondary }]}>
           Chartink backtest investments. Select type, segment and timeframe, then press Load.
         </Text>
@@ -107,7 +108,7 @@ export function InvestmentsScreen() {
             )}
           </View>
         </View>
-      </View>
+      </CollapsibleCard>
 
       {/* ── DynamicTable ──────────────────────────────────────────────────── */}
       <DynamicTable
@@ -124,15 +125,7 @@ export function InvestmentsScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  content: { paddingBottom: SPACING.xl },
-  formCard: {
-    margin: SPACING.md,
-    marginBottom: SPACING.sm,
-    borderRadius: 12,
-    borderWidth: 1,
-    padding: SPACING.md,
-    gap: SPACING.md,
-  },
+  content: { paddingTop: SPACING.md, paddingBottom: SPACING.xl },
   formNote: { fontSize: 12, lineHeight: 18 },
   controlsRow: {
     flexDirection: 'row',
@@ -149,7 +142,7 @@ const styles = StyleSheet.create({
   btn: {
     borderRadius: 8,
     paddingHorizontal: SPACING.md,
-    paddingVertical: 9,
+    paddingVertical: 6,
     alignItems: 'center',
     justifyContent: 'center',
     minWidth: 60,
@@ -158,9 +151,9 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     borderWidth: 1,
     paddingHorizontal: SPACING.md,
-    paddingVertical: 9,
+    paddingVertical: 6,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  btnText: { color: '#fff', fontWeight: '600', fontSize: 14 },
+  btnText: { color: '#fff', fontWeight: '600', fontSize: 13 },
 });

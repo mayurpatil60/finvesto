@@ -15,6 +15,7 @@ import { SelectInput, SelectOption } from '../../../components/common/SelectInpu
 import { DynamicTable } from '../../../components/dynamic-table/DynamicTable';
 import { DynamicColumn } from '../../../components/dynamic-table/types';
 import { SPACING } from '../../../types/constants';
+import { CollapsibleCard } from '../../../components/common/CollapsibleCard';
 import { marketsService } from '../services/markets.service';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
@@ -114,7 +115,7 @@ export function IpoScreen() {
   return (
     <ScrollView style={[styles.container, { backgroundColor: c.background }]} contentContainerStyle={styles.content}>
       {/* ── Form card ────────────────────────────────────────────────────── */}
-      <View style={[styles.formCard, { backgroundColor: c.surface, borderColor: c.border }]}>
+      <CollapsibleCard title="IPO">
         <Text style={[styles.formNote, { color: c.textSecondary }]}>
           View upcoming or recently listed IPOs. DynamicTable — global &amp; column search, multi-sort, filters, export built-in.
         </Text>
@@ -157,7 +158,7 @@ export function IpoScreen() {
             )}
           </View>
         </View>
-      </View>
+      </CollapsibleCard>
 
       {/* ── DynamicTable ─────────────────────────────────────────────────── */}
       <DynamicTable
@@ -175,15 +176,7 @@ export function IpoScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  content: { paddingBottom: SPACING.xl },
-  formCard: {
-    margin: SPACING.md,
-    marginBottom: SPACING.sm,
-    borderRadius: 12,
-    borderWidth: 1,
-    padding: SPACING.md,
-    gap: SPACING.md,
-  },
+  content: { paddingTop: SPACING.md, paddingBottom: SPACING.xl },
   formNote: { fontSize: 12, lineHeight: 18 },
   controlsRow: {
     flexDirection: 'row',
@@ -200,7 +193,7 @@ const styles = StyleSheet.create({
   btn: {
     borderRadius: 8,
     paddingHorizontal: SPACING.md,
-    paddingVertical: 9,
+    paddingVertical: 6,
     alignItems: 'center',
     justifyContent: 'center',
     minWidth: 60,
@@ -209,9 +202,9 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     borderWidth: 1,
     paddingHorizontal: SPACING.md,
-    paddingVertical: 9,
+    paddingVertical: 6,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  btnText: { color: '#fff', fontWeight: '600', fontSize: 14 },
+  btnText: { color: '#fff', fontWeight: '600', fontSize: 13 },
 });

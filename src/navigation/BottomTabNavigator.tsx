@@ -1,8 +1,8 @@
 // ─── Bottom Tab Navigator ─────────────────────────────────────────────────────
 
 import React from 'react';
-import { Text } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { Ionicons } from '@expo/vector-icons';
 import { AnalysisScreen } from '../screens/analysis/AnalysisScreen';
 import { MarketsScreen } from '../screens/markets/MarketsScreen';
 import { ToolsScreen } from '../screens/tools/ToolsScreen';
@@ -18,11 +18,14 @@ export type BottomTabParamList = {
 
 const Tab = createBottomTabNavigator<BottomTabParamList>();
 
-const TAB_ICONS: Record<keyof BottomTabParamList, string> = {
-  Analysis: '📊',
-  Markets: '📈',
-  Tools: '🔧',
-  Settings: '⚙️',
+type TabName = keyof BottomTabParamList;
+type IconName = React.ComponentProps<typeof Ionicons>['name'];
+
+const TAB_ICONS: Record<TabName, { active: IconName; inactive: IconName }> = {
+  Analysis: { active: 'bar-chart', inactive: 'bar-chart-outline' },
+  Markets:  { active: 'trending-up', inactive: 'trending-up-outline' },
+  Tools:    { active: 'construct', inactive: 'construct-outline' },
+  Settings: { active: 'settings', inactive: 'settings-outline' },
 };
 
 export function BottomTabNavigator() {
@@ -39,17 +42,20 @@ export function BottomTabNavigator() {
           backgroundColor: c.surface,
           borderTopColor: c.border,
           borderTopWidth: 1,
-          height: 60,
-          paddingBottom: 8,
-          paddingTop: 8,
+          height: 52,
+          paddingBottom: 6,
+          paddingTop: 6,
         },
-        tabBarIcon: ({ focused }) => (
-          <Text style={{ fontSize: 22, opacity: focused ? 1 : 0.45 }}>
-            {TAB_ICONS[route.name as keyof BottomTabParamList]}
-          </Text>
-        ),
-        tabBarActiveTintColor: c.primary,
-        tabBarInactiveTintColor: c.textSecondary,
+        tabBarIcon: ({ focused }) => {
+          const icons = TAB_ICONS[route.name as TabName];
+          return (
+            <Ionicons
+              name={focused ? icons.active : icons.inactive}
+              size={20}
+              color={focused ? c.primary : c.textSecondary}
+            />
+          );
+        },
       })}
     >
       <Tab.Screen name="Analysis" component={AnalysisScreen} />

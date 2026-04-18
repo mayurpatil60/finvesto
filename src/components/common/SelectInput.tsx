@@ -92,10 +92,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: 8,
     paddingHorizontal: SPACING.md,
-    paddingVertical: 9,
+    paddingVertical: 6,
     gap: SPACING.sm,
   },
-  triggerText: { fontSize: 14, flex: 1 },
+  triggerText: { fontSize: 12, flex: 1 },
   caret: { fontSize: 12 },
   overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)' },
   sheet: {

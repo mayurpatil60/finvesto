@@ -34,7 +34,7 @@ export function ToolsScreen() {
             onRefresh={onRefresh}
             tintColor={c.primary}
             colors={[c.primary]}
-            progressBackgroundColor={c.card}
+            progressBackgroundColor={c.surface}
           />
         }
       >
@@ -48,7 +48,7 @@ export function ToolsScreen() {
 const styles = StyleSheet.create({
   safeArea: { flex: 1 },
   body: {
-    padding: SPACING.md,
+    paddingTop: SPACING.md,
     paddingBottom: SPACING.xl,
   },
 });

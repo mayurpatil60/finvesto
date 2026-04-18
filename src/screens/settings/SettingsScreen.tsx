@@ -165,7 +165,7 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   rowValue: {
-    fontSize: 14,
+    fontSize: 13,
   },
   divider: {
     height: 1,

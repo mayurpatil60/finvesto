@@ -4,7 +4,6 @@
 import React, { useState } from 'react';
 import {
   Modal,
-  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -55,54 +54,45 @@ export function DynamicTablePaginator({
 
   return (
     <View style={[styles.wrapper, { backgroundColor: c.surface, borderTopColor: c.border }]}>
-      {/* Info + page size */}
-      <View style={styles.infoRow}>
-        <Text style={[styles.infoText, { color: c.textSecondary }]}>
-          {from}–{to} of {totalRows}
-        </Text>
-        <TouchableOpacity
-          style={[styles.sizeBtn, { borderColor: c.border, backgroundColor: c.background }]}
-          onPress={() => setShowSizePicker(true)}
-        >
-          <Text style={[styles.sizeBtnText, { color: c.text }]}>{pageSize} / page ▾</Text>
-        </TouchableOpacity>
-      </View>
+      {/* Single row: [info + size] [nav buttons] — wraps to 2 lines on narrow screens */}
+      <View style={styles.singleRow}>
+        {/* Left: info + page size */}
+        <View style={styles.leftGroup}>
+          <Text style={[styles.infoText, { color: c.textSecondary }]}>
+            {from}–{to}/{totalRows}
+          </Text>
+          <TouchableOpacity
+            style={[styles.sizeBtn, { borderColor: c.border, backgroundColor: c.background }]}
+            onPress={() => setShowSizePicker(true)}
+          >
+            <Text style={[styles.sizeBtnText, { color: c.text }]}>{pageSize} ▾</Text>
+          </TouchableOpacity>
+        </View>
 
-      {/* Page buttons */}
-      <View style={styles.pageRow}>
-        {/* First + Prev */}
-        <PageBtn label="«" onPress={() => onPageChange(0)} disabled={page === 0} />
-        <PageBtn label="‹" onPress={() => onPageChange(page - 1)} disabled={page === 0} />
-
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.numbersScroll}>
+        {/* Right: page navigation */}
+        <View style={styles.pageRow}>
+          <PageBtn label="«" onPress={() => onPageChange(0)} disabled={page === 0} />
+          <PageBtn label="‹" onPress={() => onPageChange(page - 1)} disabled={page === 0} />
           <View style={styles.numbersRow}>
-            {windowPages.map((p, i) =>
-              p === '…' ? (
-                <Text key={`ellipsis-${i}`} style={[styles.ellipsis, { color: c.textSecondary }]}>…</Text>
-              ) : (
-                <TouchableOpacity
-                  key={p}
-                  style={[
-                    styles.pageNumBtn,
-                    {
-                      backgroundColor: p === page ? c.primary : c.background,
-                      borderColor: p === page ? c.primary : c.border,
-                    },
-                  ]}
-                  onPress={() => onPageChange(p as number)}
-                >
-                  <Text style={[styles.pageNumText, { color: p === page ? '#fff' : c.text }]}>
-                    {(p as number) + 1}
-                  </Text>
-                </TouchableOpacity>
-              )
-            )}
+              {windowPages.map((p, i) =>
+                p === '…' ? (
+                  <Text key={`ellipsis-${i}`} style={[styles.ellipsis, { color: c.textSecondary }]}>…</Text>
+                ) : (
+                  <TouchableOpacity
+                    key={p}
+                    style={[styles.pageNumBtn, { backgroundColor: p === page ? c.primary : c.background, borderColor: p === page ? c.primary : c.border }]}
+                    onPress={() => onPageChange(p as number)}
+                  >
+                    <Text style={[styles.pageNumText, { color: p === page ? '#fff' : c.text }]}>
+                      {(p as number) + 1}
+                    </Text>
+                  </TouchableOpacity>
+                )
+              )}
           </View>
-        </ScrollView>
-
-        {/* Next + Last */}
-        <PageBtn label="›" onPress={() => onPageChange(page + 1)} disabled={page >= totalPages - 1} />
-        <PageBtn label="»" onPress={() => onPageChange(totalPages - 1)} disabled={page >= totalPages - 1} />
+          <PageBtn label="›" onPress={() => onPageChange(page + 1)} disabled={page >= totalPages - 1} />
+          <PageBtn label="»" onPress={() => onPageChange(totalPages - 1)} disabled={page >= totalPages - 1} />
+        </View>
       </View>
 
       {/* Page size modal */}
@@ -153,55 +143,61 @@ function PageBtn({ label, onPress, disabled }: { label: string; onPress: () => v
 
 const styles = StyleSheet.create({
   wrapper: {
-    paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.sm,
+    paddingHorizontal: SPACING.sm,
+    paddingVertical: 5,
     borderTopWidth: 1,
+  },
+  singleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
     gap: SPACING.xs,
   },
-  infoRow: {
+  leftGroup: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    gap: SPACING.xs,
   },
-  infoText: { fontSize: 12 },
+  infoText: { fontSize: 11 },
   sizeBtn: {
     borderWidth: 1,
     borderRadius: 6,
-    paddingHorizontal: SPACING.sm,
-    paddingVertical: 4,
+    paddingHorizontal: 6,
+    paddingVertical: 3,
   },
-  sizeBtnText: { fontSize: 12 },
+  sizeBtnText: { fontSize: 11 },
   pageRow: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: SPACING.xs,
+    gap: 3,
+    justifyContent: 'flex-end',
   },
-  numbersScroll: { flex: 1 },
   numbersRow: {
     flexDirection: 'row',
-    gap: SPACING.xs,
+    gap: 3,
     alignItems: 'center',
   },
   navBtn: {
-    width: 30,
-    height: 30,
+    width: 26,
+    height: 26,
     borderRadius: 6,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  navBtnText: { fontSize: 14, fontWeight: '700' },
+  navBtnText: { fontSize: 13, fontWeight: '700' },
   pageNumBtn: {
-    minWidth: 30,
-    height: 30,
+    minWidth: 26,
+    height: 26,
     borderRadius: 6,
     borderWidth: 1,
-    paddingHorizontal: 4,
+    paddingHorizontal: 3,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  pageNumText: { fontSize: 12, fontWeight: '600' },
-  ellipsis: { fontSize: 12, paddingHorizontal: 2 },
+  pageNumText: { fontSize: 11, fontWeight: '600' },
+  ellipsis: { fontSize: 11, paddingHorizontal: 2 },
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.4)',
@@ -209,7 +205,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   sizeSheet: {
-    width: 220,
+    width: 200,
     borderRadius: 12,
     borderWidth: 1,
     overflow: 'hidden',
@@ -226,8 +222,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: SPACING.md,
-    paddingVertical: 12,
+    paddingVertical: 10,
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
-  sizeOptionText: { fontSize: 14 },
+  sizeOptionText: { fontSize: 13 },
 });
