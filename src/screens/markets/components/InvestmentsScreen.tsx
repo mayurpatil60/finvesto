@@ -68,7 +68,7 @@ export function InvestmentsScreen() {
         <Text style={[styles.formNote, { color: c.textSecondary }]}>
           Chartink backtest investments. Select type, segment and timeframe, then press Load.
         </Text>
-        <View style={styles.controlsRow}>
+        <View style={styles.selectsRow}>
           <SelectInput
             label="Type"
             options={TYPE_OPTIONS}
@@ -87,26 +87,26 @@ export function InvestmentsScreen() {
             value={timeframe}
             onChange={(v) => { setTimeframe(v); setData([]); }}
           />
-          <View style={styles.btnGroup}>
+        </View>
+        <View style={styles.actionsRow}>
+          <TouchableOpacity
+            style={[styles.btn, { backgroundColor: c.primary, opacity: loading ? 0.7 : 1 }]}
+            onPress={loadData}
+            disabled={loading}
+          >
+            {loading
+              ? <ActivityIndicator color="#fff" size="small" />
+              : <Text style={styles.btnText}>Load</Text>
+            }
+          </TouchableOpacity>
+          {data.length > 0 && (
             <TouchableOpacity
-              style={[styles.btn, { backgroundColor: c.primary, opacity: loading ? 0.7 : 1 }]}
-              onPress={loadData}
-              disabled={loading}
+              style={[styles.btnIcon, { borderColor: c.border, backgroundColor: c.surface }]}
+              onPress={() => setData([])}
             >
-              {loading
-                ? <ActivityIndicator color="#fff" size="small" />
-                : <Text style={styles.btnText}>Load</Text>
-              }
+              <Text style={{ color: c.text, fontSize: 15 }}>✕</Text>
             </TouchableOpacity>
-            {data.length > 0 && (
-              <TouchableOpacity
-                style={[styles.btnSecondary, { borderColor: c.border, backgroundColor: c.surface }]}
-                onPress={() => setData([])}
-              >
-                <Text style={[styles.btnText, { color: c.text }]}>✕</Text>
-              </TouchableOpacity>
-            )}
-          </View>
+          )}
         </View>
       </CollapsibleCard>
 
@@ -127,33 +127,9 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   content: { paddingTop: SPACING.md, paddingBottom: SPACING.xl },
   formNote: { fontSize: 12, lineHeight: 18 },
-  controlsRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: SPACING.sm,
-    alignItems: 'flex-end',
-  },
-  btnGroup: {
-    flexDirection: 'row',
-    gap: SPACING.sm,
-    alignItems: 'flex-end',
-    paddingBottom: 1,
-  },
-  btn: {
-    borderRadius: 8,
-    paddingHorizontal: SPACING.md,
-    paddingVertical: 6,
-    alignItems: 'center',
-    justifyContent: 'center',
-    minWidth: 60,
-  },
-  btnSecondary: {
-    borderRadius: 8,
-    borderWidth: 1,
-    paddingHorizontal: SPACING.md,
-    paddingVertical: 6,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+  selectsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: SPACING.sm },
+  actionsRow: { flexDirection: 'row', gap: SPACING.sm, alignItems: 'center', justifyContent: 'flex-end' },
+  btn: { borderRadius: 8, paddingHorizontal: SPACING.md, paddingVertical: 6, alignItems: 'center', justifyContent: 'center', minWidth: 60 },
+  btnIcon: { width: 32, height: 32, borderRadius: 8, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
   btnText: { color: '#fff', fontWeight: '600', fontSize: 13 },
 });

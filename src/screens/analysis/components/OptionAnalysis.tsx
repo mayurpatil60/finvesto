@@ -19,12 +19,14 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../../components/theme/ThemeProvider';
 import { SPACING } from '../../../types/constants';
 import { DynamicTable } from '../../../components/dynamic-table/DynamicTable';
 import { DynamicColumn } from '../../../components/dynamic-table/types';
 import { SelectInput } from '../../../components/common/SelectInput';
 import { CollapsibleCard } from '../../../components/common/CollapsibleCard';
+import { FilterSheet } from '../../../components/common/FilterSheet';
 import { analysisService } from '../services/analysis.service';
 
 // ─── Filter definitions ───────────────────────────────────────────────────────
@@ -38,6 +40,24 @@ const FILTER_OPTIONS = [
   { label: 'Amt5k',      value: 'Amt5k' },
   { label: 'Rsi40',      value: 'Rsi40' },
   { label: 'Rsi60',      value: 'Rsi60' },
+];
+
+const FILTER_GROUPS = [
+  { label: 'Tag', options: [
+    { label: 'BuyOp', value: 'BuyOp' },
+    { label: 'NearLow', value: 'NearLow' },
+    { label: 'Rsi40', value: 'Rsi40' },
+    { label: 'Rsi60', value: 'Rsi60' },
+  ]},
+  { label: 'Volume', options: [
+    { label: 'Vol in Lakh (1-10k)', value: 'VolInLakh' },
+    { label: 'Vol in Lakhs (>10k)', value: 'VolInLakhs' },
+  ]},
+  { label: 'Amount', options: [
+    { label: 'Amt ≤ 1k', value: 'Amt1k' },
+    { label: 'Amt ≤ 2k', value: 'Amt2k' },
+    { label: 'Amt ≤ 5k', value: 'Amt5k' },
+  ]},
 ];
 
 const OPTIONS_COUNT = 2; // index choices: 0, 1
@@ -194,6 +214,7 @@ export function OptionAnalysis() {
   const [selectedBatch, setSelectedBatch] = useState('');
   const [selectedIndex, setSelectedIndex] = useState('1');
   const [selectedFilters, setSelectedFilters] = useState<string[]>([]);
+  const [showFilterSheet, setShowFilterSheet] = useState(false);
   const [loading, setLoading] = useState(false);
   const [rawData, setRawData] = useState<any[]>([]);  // enriched + tagged current batch rows
 
@@ -265,54 +286,68 @@ export function OptionAnalysis() {
           Loads current + 2 previous batches. Index = strike offset from ATM (0 = ATM, 1 = 1 above/below). Select filters to narrow results.
         </Text>
 
-        {/* Batch + Index row */}
-        <View style={styles.controlsRow}>
-          <SelectInput
-            label="Batch"
-            options={batchOptions}
-            value={selectedBatch}
-            onChange={(v: string) => { setSelectedBatch(v); setRawData([]); }}
-          />
-          <SelectInput
-            label="Index"
-            options={INDEX_OPTIONS}
-            value={selectedIndex}
-            onChange={(v: string) => setSelectedIndex(v)}
-          />
-          <View style={styles.btnGroup}>
-            <TouchableOpacity
-              style={[styles.btn, { backgroundColor: c.primary, opacity: loading ? 0.7 : 1 }]}
-              onPress={loadBatch}
-              disabled={loading}
-            >
-              {loading
-                ? <ActivityIndicator color="#fff" size="small" />
-                : <Text style={styles.btnText}>Load ({filtered.length})</Text>
-              }
-            </TouchableOpacity>
-            {rawData.length > 0 && (
-              <TouchableOpacity
-                style={[styles.btnSecondary, { borderColor: c.border, backgroundColor: c.surface }]}
-                onPress={() => { setRawData([]); setSelectedFilters([]); }}
-              >
-                <Text style={[styles.btnText, { color: c.text }]}>✕</Text>
-              </TouchableOpacity>
-            )}
+        {/* Row 1: Batch (70%) + Index (30%) */}
+        <View style={styles.inputsRow}>
+          <View style={{ flex: 7 }}>
+            <SelectInput
+              label="Batch"
+              options={batchOptions}
+              value={selectedBatch}
+              onChange={(v: string) => { setSelectedBatch(v); setRawData([]); }}
+            />
+          </View>
+          <View style={{ flex: 3 }}>
+            <SelectInput
+              label="Index"
+              options={INDEX_OPTIONS}
+              value={selectedIndex}
+              onChange={(v: string) => setSelectedIndex(v)}
+            />
           </View>
         </View>
 
-        {/* Tag filter chips */}
-        <View style={styles.chipsWrap}>
-          {FILTER_OPTIONS.map(f => (
+        {/* Row 2: right-aligned Load + Reset (if data) + Filter icon (if data) */}
+        <View style={styles.actionsRow}>
+          <TouchableOpacity
+            style={[styles.btn, { backgroundColor: c.primary, opacity: loading ? 0.7 : 1 }]}
+            onPress={loadBatch}
+            disabled={loading}
+          >
+            {loading
+              ? <ActivityIndicator color="#fff" size="small" />
+              : <Text style={styles.btnText}>Load ({filtered.length})</Text>
+            }
+          </TouchableOpacity>
+          {rawData.length > 0 && (
             <TouchableOpacity
-              key={f.value}
-              style={[styles.chip, { borderColor: c.border, backgroundColor: selectedFilters.includes(f.value) ? c.primary : c.surface }]}
-              onPress={() => toggleFilter(f.value)}
+              style={[styles.btnIcon, { borderColor: c.border, backgroundColor: c.surface }]}
+              onPress={() => { setRawData([]); setSelectedFilters([]); }}
             >
-              <Text style={{ color: selectedFilters.includes(f.value) ? '#fff' : c.text, fontSize: 12, fontWeight: '500' }}>{f.label}</Text>
+              <Text style={{ color: c.text, fontSize: 15 }}>✕</Text>
             </TouchableOpacity>
-          ))}
+          )}
+          {rawData.length > 0 && (
+            <TouchableOpacity
+              style={[styles.btnIcon, { borderColor: selectedFilters.length > 0 ? c.primary : c.border, backgroundColor: selectedFilters.length > 0 ? c.primary + '22' : c.surface }]}
+              onPress={() => setShowFilterSheet(true)}
+            >
+              <Ionicons name="options-outline" size={16} color={selectedFilters.length > 0 ? c.primary : c.text} />
+              {selectedFilters.length > 0 && (
+                <View style={[styles.filterBadge, { backgroundColor: c.primary }]}>
+                  <Text style={styles.filterBadgeText}>{selectedFilters.length}</Text>
+                </View>
+              )}
+            </TouchableOpacity>
+          )}
         </View>
+
+        <FilterSheet
+          visible={showFilterSheet}
+          onClose={() => setShowFilterSheet(false)}
+          groups={FILTER_GROUPS}
+          selected={selectedFilters}
+          onApply={setSelectedFilters}
+        />
       </CollapsibleCard>
 
       {/* ── Table */}
@@ -332,11 +367,11 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   content: { paddingTop: SPACING.md, paddingBottom: SPACING.xl },
   formNote: { fontSize: 12, lineHeight: 18 },
-  controlsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: SPACING.sm, alignItems: 'flex-end' },
-  btnGroup: { flexDirection: 'row', gap: SPACING.sm, alignItems: 'flex-end', paddingBottom: 1 },
+  inputsRow: { flexDirection: 'row', gap: SPACING.sm },
+  actionsRow: { flexDirection: 'row', gap: SPACING.sm, alignItems: 'center', justifyContent: 'flex-end' },
   btn: { borderRadius: 8, paddingHorizontal: SPACING.md, paddingVertical: 6, alignItems: 'center', justifyContent: 'center', minWidth: 60 },
-  btnSecondary: { borderRadius: 8, borderWidth: 1, paddingHorizontal: SPACING.md, paddingVertical: 6, alignItems: 'center', justifyContent: 'center' },
+  btnIcon: { width: 32, height: 32, borderRadius: 8, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
   btnText: { color: '#fff', fontWeight: '600', fontSize: 13 },
-  chipsWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: SPACING.sm },
-  chip: { borderWidth: 1, borderRadius: 16, paddingHorizontal: SPACING.md, paddingVertical: 4 },
+  filterBadge: { position: 'absolute', top: -4, right: -4, width: 14, height: 14, borderRadius: 7, alignItems: 'center', justifyContent: 'center' },
+  filterBadgeText: { color: '#fff', fontSize: 9, fontWeight: '700' },
 });

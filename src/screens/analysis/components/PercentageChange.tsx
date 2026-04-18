@@ -101,9 +101,9 @@ export function PercentageChange() {
         <Text style={[styles.formNote, { color: c.textSecondary }]}>
           Track price changes over batches. Oldest record is base (0%), all others show % change from it.
         </Text>
-        <View style={styles.controlsRow}>
+        <View style={styles.inputRow}>
           <TextInput
-            style={[styles.input, { color: c.text, borderColor: c.border, backgroundColor: c.background, flex: 1 }]}
+            style={[styles.input, { color: c.text, borderColor: c.border, backgroundColor: c.background }]}
             value={name}
             onChangeText={setName}
             placeholder="e.g. RECLTD 315 PE"
@@ -112,26 +112,26 @@ export function PercentageChange() {
             returnKeyType="search"
             onSubmitEditing={load}
           />
-          <View style={styles.btnGroup}>
+        </View>
+        <View style={styles.actionsRow}>
+          <TouchableOpacity
+            style={[styles.btn, { backgroundColor: c.primary, opacity: loading ? 0.7 : 1 }]}
+            onPress={load}
+            disabled={loading}
+          >
+            {loading
+              ? <ActivityIndicator color="#fff" size="small" />
+              : <Text style={styles.btnText}>Go</Text>
+            }
+          </TouchableOpacity>
+          {rows.length > 0 && (
             <TouchableOpacity
-              style={[styles.btn, { backgroundColor: c.primary, opacity: loading ? 0.7 : 1 }]}
-              onPress={load}
-              disabled={loading}
+              style={[styles.btnIcon, { borderColor: c.border, backgroundColor: c.surface }]}
+              onPress={() => setRows([])}
             >
-              {loading
-                ? <ActivityIndicator color="#fff" size="small" />
-                : <Text style={styles.btnText}>Go</Text>
-              }
+              <Text style={{ color: c.text, fontSize: 15 }}>✕</Text>
             </TouchableOpacity>
-            {rows.length > 0 && (
-              <TouchableOpacity
-                style={[styles.btnSecondary, { borderColor: c.border, backgroundColor: c.surface }]}
-                onPress={() => setRows([])}
-              >
-                <Text style={[styles.btnText, { color: c.text }]}>✕</Text>
-              </TouchableOpacity>
-            )}
-          </View>
+          )}
         </View>
       </CollapsibleCard>
       <DynamicTable
@@ -150,10 +150,10 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   content: { paddingTop: SPACING.md, paddingBottom: SPACING.xl },
   formNote: { fontSize: 12, lineHeight: 18 },
-  controlsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: SPACING.sm, alignItems: 'flex-end' },
-  input: { borderWidth: 1, borderRadius: 8, paddingHorizontal: SPACING.md, paddingVertical: 6, fontSize: 13 },
-  btnGroup: { flexDirection: 'row', gap: SPACING.sm, alignItems: 'flex-end', paddingBottom: 1 },
+  inputRow: { flexDirection: 'row' },
+  input: { flex: 1, borderWidth: 1, borderRadius: 8, paddingHorizontal: SPACING.md, paddingVertical: 6, fontSize: 13 },
+  actionsRow: { flexDirection: 'row', gap: SPACING.sm, alignItems: 'center', justifyContent: 'flex-end' },
   btn: { borderRadius: 8, paddingHorizontal: SPACING.md, paddingVertical: 6, alignItems: 'center', justifyContent: 'center', minWidth: 60 },
-  btnSecondary: { borderRadius: 8, borderWidth: 1, paddingHorizontal: SPACING.md, paddingVertical: 6, alignItems: 'center', justifyContent: 'center' },
+  btnIcon: { width: 32, height: 32, borderRadius: 8, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
   btnText: { color: '#fff', fontWeight: '600', fontSize: 13 },
 });

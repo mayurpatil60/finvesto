@@ -17,6 +17,7 @@ import { SPACING } from '../../../types/constants';
 import { DynamicTable } from '../../../components/dynamic-table/DynamicTable';
 import { DynamicColumn } from '../../../components/dynamic-table/types';
 import { CollapsibleCard } from '../../../components/common/CollapsibleCard';
+import { SelectInput } from '../../../components/common/SelectInput';
 import { analysisService } from '../services/analysis.service';
 
 function pctColor(val: any): string | undefined {
@@ -38,6 +39,7 @@ const SCHEMA: DynamicColumn[] = [
 ];
 
 const LEVELS = Array.from({ length: 30 }, (_, i) => i + 1);
+const LEVEL_OPTIONS = LEVELS.map(l => ({ label: String(l), value: l }));
 
 export function OptionSelection() {
   const { theme } = useTheme();
@@ -135,6 +137,7 @@ export function OptionSelection() {
         <Text style={[styles.formNote, { color: c.textSecondary }]}>
           Enter NSE symbols and expiry, pick a strike index from ATM and press Load. e.g. symbols: NIFTY, BANKNIFTY
         </Text>
+        {/* Row 1: Symbols + Expiry */}
         <View style={styles.inputsRow}>
           <TextInput
             style={[styles.input, { color: c.text, borderColor: c.border, backgroundColor: c.background, flex: 1 }]}
@@ -153,19 +156,14 @@ export function OptionSelection() {
             autoCapitalize="none"
           />
         </View>
-        {/* Level chips */}
-        <View style={styles.chipsWrap}>
-          {LEVELS.map(l => (
-            <TouchableOpacity
-              key={l}
-              style={[styles.chip, { borderColor: c.border, backgroundColor: level === l ? c.primary : c.surface }]}
-              onPress={() => setLevel(l)}
-            >
-              <Text style={{ color: level === l ? '#fff' : c.text, fontSize: 12, fontWeight: '500' }}>{l}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-        <View style={styles.btnGroup}>
+        {/* Row 2: Level selector + right-aligned Load + Reset */}
+        <View style={styles.actionsRow}>
+          <SelectInput
+            label="Level"
+            options={LEVEL_OPTIONS}
+            value={level}
+            onChange={setLevel}
+          />
           <TouchableOpacity
             style={[styles.btn, { backgroundColor: c.primary, opacity: loading ? 0.7 : 1 }]}
             onPress={loadOptions}
@@ -178,10 +176,10 @@ export function OptionSelection() {
           </TouchableOpacity>
           {data.length > 0 && (
             <TouchableOpacity
-              style={[styles.btnSecondary, { borderColor: c.border, backgroundColor: c.surface }]}
+              style={[styles.btnIcon, { borderColor: c.border, backgroundColor: c.surface }]}
               onPress={() => setData([])}
             >
-              <Text style={[styles.btnText, { color: c.text }]}>✕</Text>
+              <Text style={{ color: c.text, fontSize: 15 }}>✕</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -204,10 +202,8 @@ const styles = StyleSheet.create({
   formNote: { fontSize: 12, lineHeight: 18 },
   inputsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: SPACING.sm },
   input: { borderWidth: 1, borderRadius: 8, paddingHorizontal: SPACING.md, paddingVertical: 6, fontSize: 13, minWidth: 140 },
-  chipsWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: SPACING.sm },
-  chip: { borderWidth: 1, borderRadius: 16, paddingHorizontal: SPACING.md, paddingVertical: 4 },
-  btnGroup: { flexDirection: 'row', gap: SPACING.sm },
+  actionsRow: { flexDirection: 'row', gap: SPACING.sm, alignItems: 'center', justifyContent: 'flex-end' },
   btn: { borderRadius: 8, paddingHorizontal: SPACING.md, paddingVertical: 6, alignItems: 'center', justifyContent: 'center', minWidth: 60 },
-  btnSecondary: { borderRadius: 8, borderWidth: 1, paddingHorizontal: SPACING.md, paddingVertical: 6, alignItems: 'center', justifyContent: 'center' },
+  btnIcon: { width: 32, height: 32, borderRadius: 8, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
   btnText: { color: '#fff', fontWeight: '600', fontSize: 13 },
 });
