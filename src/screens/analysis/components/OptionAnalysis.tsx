@@ -286,24 +286,22 @@ export function OptionAnalysis() {
           Loads current + 2 previous batches. Index = strike offset from ATM (0 = ATM, 1 = 1 above/below). Select filters to narrow results.
         </Text>
 
-        {/* Row 1: Batch (70%) + Index (30%) */}
+        {/* Row 1: Batch (larger) + Index (smaller) */}
         <View style={styles.inputsRow}>
-          <View style={{ flex: 7 }}>
-            <SelectInput
-              label="Batch"
-              options={batchOptions}
-              value={selectedBatch}
-              onChange={(v: string) => { setSelectedBatch(v); setRawData([]); }}
-            />
-          </View>
-          <View style={{ flex: 3 }}>
-            <SelectInput
-              label="Index"
-              options={INDEX_OPTIONS}
-              value={selectedIndex}
-              onChange={(v: string) => setSelectedIndex(v)}
-            />
-          </View>
+          <SelectInput
+            label="Batch"
+            options={batchOptions}
+            value={selectedBatch}
+            onChange={(v: string) => { setSelectedBatch(v); setRawData([]); }}
+            style={{ flex: 3, minWidth: 0 }}
+          />
+          <SelectInput
+            label="Index"
+            options={INDEX_OPTIONS}
+            value={selectedIndex}
+            onChange={(v: string) => setSelectedIndex(v)}
+            style={{ flex: 1, minWidth: 0 }}
+          />
         </View>
 
         {/* Row 2: right-aligned Load + Reset (if data) + Filter icon (if data) */}

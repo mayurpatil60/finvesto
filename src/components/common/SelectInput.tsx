@@ -25,9 +25,10 @@ interface Props<T> {
   value: T;
   onChange: (value: T) => void;
   placeholder?: string;
+  style?: object;
 }
 
-export function SelectInput<T extends string | number>({ label, options, value, onChange, placeholder }: Props<T>) {
+export function SelectInput<T extends string | number>({ label, options, value, onChange, placeholder, style }: Props<T>) {
   const { theme } = useTheme();
   const c = theme.colors;
   const [open, setOpen] = useState(false);
@@ -36,7 +37,7 @@ export function SelectInput<T extends string | number>({ label, options, value, 
 
   return (
     <>
-      <View style={styles.wrapper}>
+      <View style={[styles.wrapper, style]}>
         <Text style={[styles.label, { color: c.textSecondary }]}>{label}</Text>
         <TouchableOpacity
           style={[styles.trigger, { backgroundColor: c.surface, borderColor: c.border }]}
