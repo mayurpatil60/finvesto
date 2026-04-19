@@ -238,13 +238,19 @@ export function DynamicTable({
   );
 
   // ── Copy column ───────────────────────────────────────────────────────────────
+  function cleanValue(value: string): string {
+    const parts = value.split(' ');
+    if (parts.length >= 4) parts.splice(3, 1);
+    return parts.join(' ');
+  }
+
   async function copyColumn(field: string) {
     const col = colDefs.find(c => c.field === field);
     const prefix = col?.copyPrefix ?? 'NSE:';
     const vals = filteredSorted
       .map(row => row[field])
       .filter(Boolean)
-      .map(v => prefix + String(v).trim())
+      .map(v => prefix + cleanValue(String(v).trim()))
       .join(', ');
 
     try {
@@ -279,13 +285,9 @@ export function DynamicTable({
 
   // ── Render helpers ────────────────────────────────────────────────────────────
   function renderTableContent(isFullscreen = false) {
-    const maxH = isFullscreen
-      ? undefined
-      : pageSize * ROW_HEIGHT;
-
     if (viewMode === 'card') {
       return (
-        <ScrollView style={{ flex: isFullscreen ? 1 : undefined, maxHeight: isFullscreen ? undefined : pageSize * (ROW_HEIGHT * 3) }}>
+        <ScrollView style={{ flex: isFullscreen ? 1 : undefined }}>
           {pageRows.map((item, index) => (
             <View key={index} style={[styles.cardItem, { backgroundColor: index % 2 === 0 ? c.surface : c.background, borderColor: c.border }]}>
               {expandedCols.map(col => {
@@ -301,7 +303,7 @@ export function DynamicTable({
                         <TouchableOpacity
                           hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
                           onPress={async () => {
-                            const text = (col.copyPrefix ?? '') + display;
+                            const text = (col.copyPrefix ?? '') + cleanValue(display);
                             try { await Clipboard.setStringAsync(text); }
                             catch { await Share.share({ message: text }); }
                           }}
@@ -341,8 +343,7 @@ export function DynamicTable({
             <FlatList
               data={pageRows}
               keyExtractor={(_, i) => String(i)}
-              scrollEnabled
-              style={{ maxHeight: maxH }}
+              scrollEnabled={false}
               removeClippedSubviews
               maxToRenderPerBatch={20}
               windowSize={5}
@@ -369,7 +370,7 @@ export function DynamicTable({
                           <TouchableOpacity
                             hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
                             onPress={async () => {
-                              const text = (col.copyPrefix ?? '') + display;
+                              const text = (col.copyPrefix ?? '') + cleanValue(display);
                               try { await Clipboard.setStringAsync(text); }
                               catch { await Share.share({ message: text }); }
                             }}

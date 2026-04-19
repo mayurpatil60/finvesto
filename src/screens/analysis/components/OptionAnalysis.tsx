@@ -1,13 +1,11 @@
 // ─── Option Analysis Component ────────────────────────────────────────────────
-// Full port of Angular option-analysis:
-//  • Loads current + prev + prevToPrev batches in parallel
-//  • getNearestCallPutOptions with index selector (0 = ATM, 1 = 1 away, etc.)
-//  • pickLatestPerTicker deduplication
-//  • BuyOp tag: prevToPrev > prev < current (v-shaped)
-//  • RSI tags: Rsi40 / Rsi60 crossings
+// Port of Angular option-analysis (simplified):
+//  • Loads current + prev batch only (2 batches)
+//  • pickByIndex: group by ticker+option_type, sort by |strike_price - underline_ltp|, pick at index
+//  • addBuyTags: current_price > prev.current_price → tag = 'Buy'
 //  • amount = current_price * lot_size
 //  • Multi-select tag filters + amount/volume filters
-//  • DynamicTable with copy on name + ticker
+//  • Index visible only after data is loaded
 
 import React, { useEffect, useMemo, useState } from 'react';
 import {
@@ -30,24 +28,9 @@ import { FilterSheet } from '../../../components/common/FilterSheet';
 import { analysisService } from '../services/analysis.service';
 
 // ─── Filter definitions ───────────────────────────────────────────────────────
-const FILTER_OPTIONS = [
-  { label: 'BuyOp',      value: 'BuyOp' },
-  { label: 'NearLow',    value: 'NearLow' },
-  { label: 'VolInLakh',  value: 'VolInLakh' },
-  { label: 'VolInLakhs', value: 'VolInLakhs' },
-  { label: 'Amt1k',      value: 'Amt1k' },
-  { label: 'Amt2k',      value: 'Amt2k' },
-  { label: 'Amt5k',      value: 'Amt5k' },
-  { label: 'Rsi40',      value: 'Rsi40' },
-  { label: 'Rsi60',      value: 'Rsi60' },
-];
-
 const FILTER_GROUPS = [
   { label: 'Tag', options: [
-    { label: 'BuyOp', value: 'BuyOp' },
-    { label: 'NearLow', value: 'NearLow' },
-    { label: 'Rsi40', value: 'Rsi40' },
-    { label: 'Rsi60', value: 'Rsi60' },
+    { label: 'Buy', value: 'Buy' },
   ]},
   { label: 'Volume', options: [
     { label: 'Vol in Lakh (1-10k)', value: 'VolInLakh' },
@@ -60,13 +43,12 @@ const FILTER_GROUPS = [
   ]},
 ];
 
-const OPTIONS_COUNT = 2; // index choices: 0, 1
-const INDEX_OPTIONS = Array.from({ length: OPTIONS_COUNT }, (_, i) => ({
-  label: String(i),
-  value: String(i),
-}));
+const INDEX_OPTIONS = [
+  { label: '0', value: '0' },
+  { label: '1', value: '1' },
+];
 
-// ─── Schema ───────────────────────────────────────────────────────────────────
+// ─── Schema (matches Angular mapAnalysisKeys) ─────────────────────────────────
 function pctColor(val: any): string | undefined {
   const n = parseFloat(String(val ?? ''));
   if (isNaN(n)) return undefined;
@@ -74,16 +56,17 @@ function pctColor(val: any): string | undefined {
 }
 
 const SCHEMA: DynamicColumn[] = [
-  { field: 'ticker',          header: 'Ticker',   width: 80,  type: 'text',   sortable: true, filterable: true, copyEnabled: true, copyPrefix: 'NSE:' },
-  { field: 'mappDisplayName', header: 'Name',     width: 160, type: 'text',   sortable: true, filterable: true, copyEnabled: true, copyPrefix: '' },
-  { field: 'current_price',   header: 'Price',    width: 80,  type: 'number', sortable: true },
-  { field: 'day_changeP',     header: 'Day %',    width: 70,  type: 'number', sortable: true, colorFn: pctColor },
-  { field: 'change_per_month',header: 'Month %',  width: 80,  type: 'number', sortable: true, colorFn: pctColor },
-  { field: 'rsi',             header: 'RSI',      width: 60,  type: 'number', sortable: true },
-  { field: 'volume',          header: 'Volume',   width: 80,  type: 'number', sortable: true },
-  { field: 'amount',          header: 'Amount',   width: 80,  type: 'number', sortable: true },
-  { field: 'expiry',          header: 'Expiry',   width: 100, type: 'text',   sortable: true },
-  { field: 'tag',             header: 'Tag',      width: 120, type: 'text',   sortable: true, filterable: true },
+  { field: 'ticker',           header: 'Ticker',   width: 80,  type: 'text',   sortable: true, filterable: true, copyEnabled: true, copyPrefix: 'NSE:' },
+  { field: 'underline_ltp',    header: 'LTP',      width: 80,  type: 'number', sortable: true },
+  { field: 'change_per_month', header: 'Month %',  width: 80,  type: 'number', sortable: true, colorFn: pctColor },
+  { field: 'rsi',              header: 'RSI',      width: 60,  type: 'number', sortable: true },
+  { field: 'volume',           header: 'Volume',   width: 80,  type: 'number', sortable: true },
+  { field: 'expiry',           header: 'Expiry',   width: 100, type: 'text',   sortable: true },
+  { field: 'mappDisplayName',  header: 'Name',     width: 160, type: 'text',   sortable: true, filterable: true, copyEnabled: true, copyPrefix: '' },
+  { field: 'current_price',    header: 'Price',    width: 80,  type: 'number', sortable: true },
+  { field: 'day_changeP',      header: 'Day %',    width: 70,  type: 'number', sortable: true, colorFn: pctColor },
+  { field: 'amount',           header: 'Amount',   width: 80,  type: 'number', sortable: true },
+  { field: 'tag',              header: 'Tag',      width: 80,  type: 'text',   sortable: true, filterable: true },
 ];
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -101,102 +84,49 @@ function parseBatchDateTime(batchId: string): Date {
   return new Date(`${datePart}T${String(hours).padStart(2,'0')}:${String(minutes).padStart(2,'0')}:00`);
 }
 
-function getNearestCallPutOptions(options: any[], index: number): any[] {
-  if (index < 0) return [...options];
+function enrichAmount(items: any[]): any[] {
+  return items.map(o => ({
+    ...o,
+    amount: Math.round((parseFloat(o.current_price) || 0) * (o.lot_size || 0)),
+  }));
+}
 
-  const grouped: Record<string, any[]> = {};
-  for (const o of options) {
-    if (!grouped[o.ticker]) grouped[o.ticker] = [];
-    grouped[o.ticker].push(o);
+/** Group by ticker+option_type, sort by |strike_price - underline_ltp|, pick at index */
+function pickByIndex(data: any[], index: number): any[] {
+  const grouped = new Map<string, any[]>();
+  for (const item of data) {
+    const key = `${item.ticker}_${item.option_type}`;
+    if (!grouped.has(key)) grouped.set(key, []);
+    grouped.get(key)!.push(item);
   }
-
   const result: any[] = [];
-  for (const ticker in grouped) {
-    const list = grouped[ticker];
-    const latest = list.reduce((a: any, b: any) =>
-      parseBatchDateTime(a.batch_id || '') > parseBatchDateTime(b.batch_id || '') ? a : b
+  for (const items of grouped.values()) {
+    const ltp = items[0]?.underline_ltp ?? 0;
+    const sorted = [...items].sort(
+      (a, b) => Math.abs((a.strike_price ?? 0) - ltp) - Math.abs((b.strike_price ?? 0) - ltp),
     );
-    const basePrice = latest.open_month ?? latest.current_price ?? 0;
-
-    const calls = list.filter((o: any) => o.option_type === 'CE');
-    const puts  = list.filter((o: any) => o.option_type === 'PE');
-
-    const callStrikes = [...new Set(calls.map((c: any) => c.strike_price))].sort((a: any, b: any) => a - b);
-    const putStrikes  = [...new Set(puts.map((p: any) => p.strike_price))].sort((a: any, b: any) => a - b);
-
-    if (!callStrikes.length && !putStrikes.length) continue;
-
-    const callAtm = callStrikes.length ? callStrikes.reduce((bestIdx: number, s: any, i: number) => {
-      return Math.abs(s - basePrice) < Math.abs(callStrikes[bestIdx] - basePrice) ? i : bestIdx;
-    }, 0) : -1;
-    const putAtm = putStrikes.length ? putStrikes.reduce((bestIdx: number, s: any, i: number) => {
-      return Math.abs(s - basePrice) < Math.abs(putStrikes[bestIdx] - basePrice) ? i : bestIdx;
-    }, 0) : -1;
-
-    const ce = calls.find((c: any) => c.strike_price === callStrikes[callAtm + index]);
-    const pe = puts.find((p: any) => p.strike_price === putStrikes[putAtm - index]);
-
-    if (ce) result.push(ce);
-    if (pe) result.push(pe);
+    if (sorted[index] !== undefined) result.push(sorted[index]);
   }
   return result;
 }
 
-function pickLatestPerTicker(data: any[]): any[] {
-  const map = new Map<string, any>();
-  for (const o of data) {
-    const key = `${o.ticker}_${o.option_type}_${o.strike_price}`;
-    const existing = map.get(key);
-    if (!existing || parseBatchDateTime(o.batch_id || '') > parseBatchDateTime(existing.batch_id || '')) {
-      map.set(key, o);
-    }
-  }
-  return Array.from(map.values());
-}
-
-function enrichAmount(items: any[]): any[] {
-  return items.map(o => ({ ...o, amount: Math.round((parseFloat(o.current_price) || 0) * (o.lot_size || 0)) }));
-}
-
-function buildMap(data: any[]): Map<string, any> {
-  const m = new Map<string, any>();
-  for (const o of data) m.set(`${o.ticker}_${o.option_type}_${o.strike_price}`, o);
-  return m;
-}
-
-function computeTags(current: any[], previous: any[], prevToPrev: any[]): any[] {
-  if (!previous.length || !prevToPrev.length) {
-    return current.map(c => ({ ...c, tag: '' }));
-  }
-  const prevMap = buildMap(previous);
-  const ppMap   = buildMap(prevToPrev);
-
+/** tag = 'Buy' if current_price > prev batch current_price (matched by mappDisplayName) */
+function addBuyTags(current: any[], previous: any[]): any[] {
+  if (!previous.length) return current.map(c => ({ ...c, tag: '' }));
+  const prevMap = new Map<string, any>();
+  for (const o of previous) prevMap.set(o.mappDisplayName, o);
   return current.map(item => {
-    const key  = `${item.ticker}_${item.option_type}_${item.strike_price}`;
-    const prev = prevMap.get(key);
-    const pp   = ppMap.get(key);
-    if (!prev || !pp) return { ...item, tag: '' };
-
-    const tags: string[] = [];
-    const oc = item.current_price, op = prev.current_price, opp = pp.current_price;
-    if (oc !== undefined && op !== undefined && opp !== undefined) {
-      if (opp > op && op < oc) tags.push('BuyOp');
+    const prev = prevMap.get(item.mappDisplayName);
+    if (!prev || item.current_price === undefined || prev.current_price === undefined) {
+      return { ...item, tag: '' };
     }
-    const cr = item.rsi, pr = prev.rsi;
-    if (cr !== undefined && pr !== undefined) {
-      if (pr <= 40 && cr > 40) tags.push('Rsi40');
-      if (pr >= 60 && cr < 60) tags.push('Rsi60');
-    }
-    return { ...item, tag: tags.join(', ') };
+    return { ...item, tag: item.current_price > prev.current_price ? 'Buy' : '' };
   });
 }
 
 function applyFilters(data: any[], filters: string[]): any[] {
   let result = [...data];
-  if (filters.includes('BuyOp'))      result = result.filter(o => o.tag?.split(', ').includes('BuyOp'));
-  if (filters.includes('NearLow'))    result = result.filter(o => o.tag?.split(', ').includes('NearLow'));
-  if (filters.includes('Rsi40'))      result = result.filter(o => o.tag?.split(', ').includes('Rsi40'));
-  if (filters.includes('Rsi60'))      result = result.filter(o => o.tag?.split(', ').includes('Rsi60'));
+  if (filters.includes('Buy'))        result = result.filter(o => o.tag === 'Buy');
   if (filters.includes('VolInLakh'))  result = result.filter(o => (o.volume ?? 0) > 1 && (o.volume ?? 0) <= 10000);
   if (filters.includes('VolInLakhs')) result = result.filter(o => (o.volume ?? 0) > 10000);
   if (filters.includes('Amt1k'))      result = result.filter(o => (o.amount ?? 0) > 1 && (o.amount ?? 0) <= 1000);
@@ -212,11 +142,12 @@ export function OptionAnalysis() {
 
   const [batches, setBatches] = useState<string[]>([]);
   const [selectedBatch, setSelectedBatch] = useState('');
-  const [selectedIndex, setSelectedIndex] = useState('1');
+  const [selectedIndex, setSelectedIndex] = useState('0');
   const [selectedFilters, setSelectedFilters] = useState<string[]>([]);
   const [showFilterSheet, setShowFilterSheet] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [rawData, setRawData] = useState<any[]>([]);  // enriched + tagged current batch rows
+  const [rawData, setRawData] = useState<any[]>([]);
+  const [previousData, setPreviousData] = useState<any[]>([]);
 
   useEffect(() => { loadBatches(); }, []);
 
@@ -234,33 +165,24 @@ export function OptionAnalysis() {
   async function loadBatch() {
     setLoading(true);
     setRawData([]);
+    setPreviousData([]);
     try {
       const currentIdx = batches.indexOf(selectedBatch);
-      const prevId     = currentIdx + 1 < batches.length ? batches[currentIdx + 1] : null;
-      const ppId       = currentIdx + 2 < batches.length ? batches[currentIdx + 2] : null;
+      const prevId = currentIdx + 1 < batches.length ? batches[currentIdx + 1] : null;
 
-      const [curRes, prevRes, ppRes] = await Promise.all([
+      const [curRes, prevRes] = await Promise.all([
         analysisService.getBatch(selectedBatch),
         prevId ? analysisService.getBatch(prevId) : Promise.resolve({ data: [] }),
-        ppId   ? analysisService.getBatch(ppId)   : Promise.resolve({ data: [] }),
       ]);
 
       const idx = parseInt(selectedIndex, 10);
 
-      let current    = getNearestCallPutOptions(curRes.data ?? [], idx);
-      current        = pickLatestPerTicker(current);
-      current        = enrichAmount(current);
+      const current  = enrichAmount(pickByIndex(curRes.data ?? [], idx));
+      const previous = enrichAmount(pickByIndex(prevRes.data ?? [], idx));
 
-      let previous   = getNearestCallPutOptions(prevRes.data ?? [], idx);
-      previous       = pickLatestPerTicker(previous);
-      previous       = enrichAmount(previous);
-
-      let prevToPrev = getNearestCallPutOptions(ppRes.data ?? [], idx);
-      prevToPrev     = pickLatestPerTicker(prevToPrev);
-      prevToPrev     = enrichAmount(prevToPrev);
-
-      const tagged = computeTags(current, previous, prevToPrev);
+      const tagged = addBuyTags(current, previous);
       setRawData(tagged);
+      setPreviousData(previous);
     } catch (e: any) {
       Alert.alert('Error', e.message);
     } finally {
@@ -268,43 +190,40 @@ export function OptionAnalysis() {
     }
   }
 
-  function toggleFilter(f: string) {
-    setSelectedFilters(prev =>
-      prev.includes(f) ? prev.filter(x => x !== f) : [...prev, f]
-    );
+  /** Re-run index selection on already-loaded raw batch data without re-fetching */
+  function applyIndex(newIndex: string) {
+    setSelectedIndex(newIndex);
+    if (!rawData.length && !previousData.length) return;
+    // rawData already had pickByIndex applied; need original batch data to re-index
+    // Since we don't cache raw batches, just reload
+    loadBatch();
   }
 
   const filtered = useMemo(() => applyFilters(rawData, selectedFilters), [rawData, selectedFilters]);
 
   const batchOptions = batches.map(b => ({ label: b.replace('_', ' '), value: b }));
+  const hasData = rawData.length > 0;
 
   return (
     <ScrollView style={[styles.container, { backgroundColor: c.background }]} contentContainerStyle={styles.content}>
       {/* ── Form card ─ */}
       <CollapsibleCard title="Option Analysis">
         <Text style={[styles.formNote, { color: c.textSecondary }]}>
-          Loads current + 2 previous batches. Index = strike offset from ATM (0 = ATM, 1 = 1 above/below). Select filters to narrow results.
+          Loads current + previous batch. Index 0 = ATM (nearest to LTP), Index 1 = next strike. Select filters to narrow results.
         </Text>
 
-        {/* Row 1: Batch (larger) + Index (smaller) */}
+        {/* Row 1: Batch */}
         <View style={styles.inputsRow}>
           <SelectInput
             label="Batch"
             options={batchOptions}
             value={selectedBatch}
-            onChange={(v: string) => { setSelectedBatch(v); setRawData([]); }}
-            style={{ flex: 3, minWidth: 0 }}
-          />
-          <SelectInput
-            label="Index"
-            options={INDEX_OPTIONS}
-            value={selectedIndex}
-            onChange={(v: string) => setSelectedIndex(v)}
+            onChange={(v: string) => { setSelectedBatch(v); setRawData([]); setPreviousData([]); }}
             style={{ flex: 1, minWidth: 0 }}
           />
         </View>
 
-        {/* Row 2: right-aligned Load + Reset (if data) + Filter icon (if data) */}
+        {/* Row 2: Load button */}
         <View style={styles.actionsRow}>
           <TouchableOpacity
             style={[styles.btn, { backgroundColor: c.primary, opacity: loading ? 0.7 : 1 }]}
@@ -316,15 +235,27 @@ export function OptionAnalysis() {
               : <Text style={styles.btnText}>Load ({filtered.length})</Text>
             }
           </TouchableOpacity>
-          {rawData.length > 0 && (
+
+          {/* Index — visible only after data loaded */}
+          {hasData && (
+            <SelectInput
+              label=""
+              options={INDEX_OPTIONS}
+              value={selectedIndex}
+              onChange={applyIndex}
+              style={{ width: 110 }}
+            />
+          )}
+
+          {hasData && (
             <TouchableOpacity
               style={[styles.btnIcon, { borderColor: c.border, backgroundColor: c.surface }]}
-              onPress={() => { setRawData([]); setSelectedFilters([]); }}
+              onPress={() => { setRawData([]); setPreviousData([]); setSelectedFilters([]); }}
             >
               <Text style={{ color: c.text, fontSize: 15 }}>✕</Text>
             </TouchableOpacity>
           )}
-          {rawData.length > 0 && (
+          {hasData && (
             <TouchableOpacity
               style={[styles.btnIcon, { borderColor: selectedFilters.length > 0 ? c.primary : c.border, backgroundColor: selectedFilters.length > 0 ? c.primary + '22' : c.surface }]}
               onPress={() => setShowFilterSheet(true)}
@@ -366,10 +297,11 @@ const styles = StyleSheet.create({
   content: { paddingTop: SPACING.md, paddingBottom: SPACING.xl },
   formNote: { fontSize: 12, lineHeight: 18 },
   inputsRow: { flexDirection: 'row', gap: SPACING.sm },
-  actionsRow: { flexDirection: 'row', gap: SPACING.sm, alignItems: 'center', justifyContent: 'flex-end' },
+  actionsRow: { flexDirection: 'row', gap: SPACING.sm, alignItems: 'center', justifyContent: 'flex-end', flexWrap: 'wrap' },
   btn: { borderRadius: 8, paddingHorizontal: SPACING.md, paddingVertical: 6, alignItems: 'center', justifyContent: 'center', minWidth: 60 },
   btnIcon: { width: 32, height: 32, borderRadius: 8, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
   btnText: { color: '#fff', fontWeight: '600', fontSize: 13 },
   filterBadge: { position: 'absolute', top: -4, right: -4, width: 14, height: 14, borderRadius: 7, alignItems: 'center', justifyContent: 'center' },
   filterBadgeText: { color: '#fff', fontSize: 9, fontWeight: '700' },
 });
+
