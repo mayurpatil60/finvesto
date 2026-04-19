@@ -32,34 +32,53 @@ npm install
 
 ## 📱 Install on Your Android Phone (APK)
 
-### Latest build QR / download link
-Go to: **https://expo.dev/accounts/mayurpatil60/projects/finvesto/builds**
+### Step 1 — Build an installable APK
 
-- Open the latest build → scan the **QR code** on that page with your phone camera
-- Or tap the **Download** button to get the `.apk` file
-- Enable **Install from unknown sources** in Android Settings → Security before installing
+Run this command (uses the `preview` profile which outputs `.apk`):
+
+```bash
+eas build -p android --profile preview
+```
+
+> ⚠️ **Do NOT use `--profile production`** for direct installs — that outputs `.aab` (Android App Bundle) which is only accepted by the Play Store, **not installable directly on a phone**.
+
+| Profile       | Output | Use for                               |
+| ------------- | ------ | ------------------------------------- |
+| `development` | `.apk` | Dev/debug builds with dev menu        |
+| `preview`     | `.apk` | Direct install on any Android phone ✅ |
+| `production`  | `.aab` | Google Play Store upload only         |
+
+### Step 2 — Download the APK
+
+Once the build finishes (~10 min):
+
+1. Go to **https://expo.dev/accounts/mayurpatil60/projects/finvesto/builds**
+2. Click the latest **preview** build
+3. Either:
+   - Scan the **QR code** with your phone camera — opens direct download on device
+   - Click **Download** on your PC, then transfer to phone via USB / WhatsApp / Drive
+
+### Step 3 — Install on phone
+
+1. Open the downloaded `.apk` file on your phone
+2. If prompted, enable **Install from unknown sources** → Settings → Security → Unknown apps
+3. Tap Install
 
 ---
 
 ## 🔨 Build Commands
 
-### Build Android development
+### Build installable APK (preview)
+```bash
+eas build -p android --profile preview
+```
+
+### Build development APK (with dev menu)
 ```bash
 eas build -p android --profile development
 ```
 
-
-### Build a new Android APK (needed only for native changes)
-```bash
-eas build -p android --profile preview
-```
-or 
-```bash
-eas build -p android --profile preview --local
-```
-> Required when: adding native packages, changing app icons/permissions, or updating native config.
-
-### Build Android for Production (Play Store)
+### Build for Play Store (AAB — not directly installable)
 ```bash
 eas build -p android --profile production
 ```
