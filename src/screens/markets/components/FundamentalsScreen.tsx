@@ -73,9 +73,10 @@ export function FundamentalsScreen() {
   const [refreshing, setRefreshing] = useState(false);
 
   const onRefresh = useCallback(() => {
+    if (!data.length) { setRefreshing(false); return; }
     setRefreshing(true);
     loadData().finally(() => setRefreshing(false));
-  }, [group, query]);
+  }, [group, query, data]);
 
   async function loadData() {
     setLoading(true);

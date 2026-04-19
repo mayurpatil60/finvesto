@@ -94,9 +94,10 @@ export function IpoScreen() {
   const [refreshing, setRefreshing] = useState(false);
 
   const onRefresh = useCallback(() => {
+    if (!data.length) { setRefreshing(false); return; }
     setRefreshing(true);
     fetchData().finally(() => setRefreshing(false));
-  }, [ipoType, year]);
+  }, [ipoType, year, data]);
 
   async function fetchData(type: IpoType = ipoType, y: number = year) {
     setLoading(true);

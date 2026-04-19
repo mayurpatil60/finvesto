@@ -152,9 +152,10 @@ export function OptionAnalysis() {
   const [refreshing, setRefreshing] = useState(false);
 
   const onRefresh = useCallback(() => {
+    if (!rawData.length) { setRefreshing(false); return; }
     setRefreshing(true);
     loadBatch().finally(() => setRefreshing(false));
-  }, [selectedBatch, selectedIndex]);
+  }, [selectedBatch, selectedIndex, rawData]);
 
   useEffect(() => { loadBatches(); }, []);
 

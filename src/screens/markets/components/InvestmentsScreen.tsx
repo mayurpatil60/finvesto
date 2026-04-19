@@ -60,9 +60,10 @@ export function InvestmentsScreen() {
   const [refreshing, setRefreshing] = useState(false);
 
   const onRefresh = useCallback(() => {
+    if (!data.length) { setRefreshing(false); return; }
     setRefreshing(true);
     loadData().finally(() => setRefreshing(false));
-  }, [type, segment, timeframe]);
+  }, [type, segment, timeframe, data]);
 
   async function loadData() {
     setLoading(true);

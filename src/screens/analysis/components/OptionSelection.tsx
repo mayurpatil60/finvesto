@@ -54,9 +54,10 @@ export function OptionSelection() {
   const [refreshing, setRefreshing] = useState(false);
 
   const onRefresh = useCallback(() => {
+    if (!data.length) { setRefreshing(false); return; }
     setRefreshing(true);
     loadOptions().finally(() => setRefreshing(false));
-  }, [symbols, expiry, level]);
+  }, [symbols, expiry, level, data]);
 
   useEffect(() => {
     analysisService.getExpiry().then(r => {

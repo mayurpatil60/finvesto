@@ -55,12 +55,13 @@ export function OptionRange() {
   const scrollRef = useRef<ScrollView>(null);
 
   const onRefresh = useCallback(() => {
+    if (!data.length) { setRefreshing(false); return; }
     setRefreshing(true);
     loadBatch(selectedBatch, true).finally(() => {
       setRefreshing(false);
       scrollRef.current?.scrollTo({ y: 0, animated: false });
     });
-  }, [selectedBatch]);
+  }, [selectedBatch, data]);
 
   useEffect(() => {
     loadBatchIds();

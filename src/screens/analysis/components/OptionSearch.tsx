@@ -99,10 +99,10 @@ export function OptionSearch() {
   const [refreshing, setRefreshing] = useState(false);
 
   const onRefresh = useCallback(() => {
-    if (!name.trim()) { return; }
+    if (!data.length) { setRefreshing(false); return; }
     setRefreshing(true);
     search().finally(() => setRefreshing(false));
-  }, [name]);
+  }, [name, data]);
 
   async function search() {
     setLoading(true);
