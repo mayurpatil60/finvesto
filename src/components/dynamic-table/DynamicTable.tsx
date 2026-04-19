@@ -303,7 +303,7 @@ export function DynamicTable({
                         <TouchableOpacity
                           hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
                           onPress={async () => {
-                            const text = (col.copyPrefix ?? '') + cleanValue(display);
+                            const text = (col.copyPrefix ?? '') + display;
                             try { await Clipboard.setStringAsync(text); }
                             catch { await Share.share({ message: text }); }
                           }}
@@ -347,6 +347,22 @@ export function DynamicTable({
               removeClippedSubviews
               maxToRenderPerBatch={20}
               windowSize={5}
+              refreshControl={
+                onRefresh ? (
+                  <RefreshControl
+                    refreshing={refreshing}
+                    onRefresh={handleRefresh}
+                    tintColor={c.primary}
+                  />
+                ) : undefined
+              }
+              ListEmptyComponent={
+                !loading ? (
+                  <View style={[styles.emptyRow, { width: totalWidth }]}>
+                    <Text style={[styles.emptyText, { color: c.textSecondary }]}>{emptyText}</Text>
+                  </View>
+                ) : null
+              }
               renderItem={({ item, index }) => (
                 <View
                   style={[
@@ -370,7 +386,7 @@ export function DynamicTable({
                           <TouchableOpacity
                             hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
                             onPress={async () => {
-                              const text = (col.copyPrefix ?? '') + cleanValue(display);
+                              const text = (col.copyPrefix ?? '') + display;
                               try { await Clipboard.setStringAsync(text); }
                               catch { await Share.share({ message: text }); }
                             }}
@@ -383,22 +399,6 @@ export function DynamicTable({
                   })}
                 </View>
               )}
-              refreshControl={
-                onRefresh ? (
-                  <RefreshControl
-                    refreshing={refreshing}
-                    onRefresh={handleRefresh}
-                    tintColor={c.primary}
-                  />
-                ) : undefined
-              }
-              ListEmptyComponent={
-                !loading ? (
-                  <View style={[styles.emptyRow, { width: totalWidth }]}>
-                    <Text style={[styles.emptyText, { color: c.textSecondary }]}>{emptyText}</Text>
-                  </View>
-                ) : null
-              }
             />
             {loading && (
               <View style={[styles.loadingRow, { width: totalWidth }]}>
@@ -415,8 +415,6 @@ export function DynamicTable({
       </>
     );
   }
-
-  // ── Render ────────────────────────────────────────────────────────────────────
   if (!loading && data.length === 0) {
     return (
       <View style={[styles.emptyState, { backgroundColor: 'transparent' }]}>

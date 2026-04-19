@@ -26,18 +26,18 @@ function pctColor(val: any): string | undefined {
 }
 
 const SCHEMA: DynamicColumn[] = [
-  { field: 'ticker',               header: 'Ticker',      width: 80,  type: 'text',   sortable: true, copyEnabled: true, copyPrefix: 'NSE:' },
-  { field: 'mappDisplayName',      header: 'Name',        width: 160, type: 'text',   sortable: true, filterable: true, copyEnabled: true, copyPrefix: '' },
-  { field: 'option_type',          header: 'Type',        width: 55,  type: 'text',   sortable: true },
-  { field: 'current_price',        header: 'Price',       width: 70,  type: 'number', sortable: true },
-  { field: 'all_time_low',         header: 'ATL',         width: 70,  type: 'number', sortable: true },
-  { field: 'all_time_high',        header: 'ATH',         width: 70,  type: 'number', sortable: true },
-  { field: 'all_time_change_per',  header: 'ATL→ATH %',  width: 90,  type: 'number', sortable: true, colorFn: pctColor },
-  { field: 'day_changeP',          header: 'Day %',       width: 70,  type: 'number', sortable: true, colorFn: pctColor },
-  { field: 'change_per_month',     header: 'Month %',     width: 80,  type: 'number', sortable: true, colorFn: pctColor },
-  { field: 'underline_ltp',        header: 'Stock LTP',   width: 80,  type: 'number', sortable: true },
-  { field: 'rsi',                  header: 'RSI',         width: 55,  type: 'number', sortable: true },
-  { field: 'volume',               header: 'Volume',      width: 80,  type: 'number', sortable: true },
+  { field: 'ticker',              header: 'Ticker',     width: 80,  type: 'text',   sortable: true, copyEnabled: true, copyPrefix: 'NSE:' },
+  { field: 'underline_ltp',       header: 'Stock LTP',  width: 90,  type: 'number', sortable: true },
+  { field: 'change_per_month',    header: 'Month %',    width: 80,  type: 'number', sortable: true, colorFn: pctColor },
+  { field: 'rsi',                 header: 'RSI',        width: 55,  type: 'number', sortable: true },
+  { field: 'mappDisplayName',     header: 'Name',       width: 160, type: 'text',   sortable: true, filterable: true, copyEnabled: true, copyPrefix: '' },
+  { field: 'current_price',       header: 'Price',      width: 80,  type: 'number', sortable: true },
+  { field: 'day_changeP',         header: 'Day %',      width: 70,  type: 'number', sortable: true, colorFn: pctColor },
+  { field: 'volume',              header: 'Volume',     width: 80,  type: 'number', sortable: true },
+  { field: 'atl_ath',             header: 'ATL / ATH',  width: 130, type: 'text',   sortable: true },
+  { field: 'atl_ath_per',         header: 'ATL→ATH %', width: 90,  type: 'number', sortable: true, colorFn: pctColor },
+  { field: 'atl_amount',          header: 'ATL Amt',    width: 90,  type: 'number', sortable: true },
+  { field: 'amount',              header: 'Amount',     width: 90,  type: 'number', sortable: true },
 ];
 
 export function OptionRange() {
@@ -56,17 +56,21 @@ export function OptionRange() {
   async function loadBatchIds() {
     try {
       const res = await optionRangeService.getBatchIds();
-      setBatches(res.data ?? []);
+      const ids: string[] = res.data ?? [];
+      setBatches(ids);
+      if (ids.length) {
+        setSelectedBatch(ids[0]);
+      }
     } catch (e: any) {
       Alert.alert('Error', e.message ?? 'Failed to load batch ids');
     }
   }
 
-  async function loadBatch() {
-    if (!selectedBatch) return;
+  async function loadBatch(batchId = selectedBatch) {
+    if (!batchId) return;
     setLoading(true);
     try {
-      const res = await optionRangeService.getBatch(selectedBatch);
+      const res = await optionRangeService.getBatch(batchId);
       setData((res.data ?? []).map((o: any) => ({
         ticker: o.ticker,
         underline_ltp: o.underline_ltp,
@@ -76,9 +80,12 @@ export function OptionRange() {
         current_price: o.current_price,
         day_changeP: o.day_changeP,
         volume: o.volume,
-        all_time_low: o.all_time_low,
-        all_time_high: o.all_time_high,
-        all_time_change_per: o.all_time_change_per,
+        atl_ath: o.all_time_low != null && o.all_time_high != null
+          ? `${o.all_time_low} / ${o.all_time_high}`
+          : null,
+        atl_ath_per: o.all_time_change_per,
+        atl_amount: Math.round((o.all_time_low ?? 0) * (o.lot_size ?? 0)),
+        amount: Math.round((o.current_price ?? 0) * (o.lot_size ?? 0)),
       })));
     } catch (e: any) {
       Alert.alert('Error', e.message ?? 'Failed to load batch');
@@ -158,7 +165,7 @@ export function OptionRange() {
 
           <Text
             style={[styles.btn, { backgroundColor: c.primary, color: '#fff', opacity: selectedBatch ? 1 : 0.5 }]}
-            onPress={loadBatch}
+            onPress={() => loadBatch()}
           >
             Load
           </Text>
@@ -176,12 +183,18 @@ export function OptionRange() {
 
       {loading && <ActivityIndicator style={{ marginTop: SPACING.md }} color={c.primary} />}
 
-      {data.length > 0 && (
-        <View style={{ marginTop: SPACING.sm }}>
-          <DynamicTable data={data} schema={SCHEMA} />
-        </View>
-      )}
       </CollapsibleCard>
+
+      {data.length > 0 && (
+        <DynamicTable
+          data={data}
+          schema={SCHEMA}
+          loading={loading}
+          onRefresh={() => loadBatch()}
+          title="Option Range"
+          emptyText="Select a batch and press Load."
+        />
+      )}
     </ScrollView>
   );
 }

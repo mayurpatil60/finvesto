@@ -13,6 +13,7 @@ import {
 import { useTheme } from '../../../components/theme/ThemeProvider';
 import { SelectInput, SelectOption } from '../../../components/common/SelectInput';
 import { DynamicTable } from '../../../components/dynamic-table/DynamicTable';
+import { DynamicColumn } from '../../../components/dynamic-table/types';
 import { SPACING } from '../../../types/constants';
 import { CollapsibleCard } from '../../../components/common/CollapsibleCard';
 import { marketsService } from '../services/markets.service';
@@ -38,6 +39,14 @@ const TIMEFRAME_OPTIONS: SelectOption<InvTimeframe>[] = [
   { label: 'Quarterly', value: 'quarterly' },
 ];
 
+const INV_SCHEMA: DynamicColumn[] = [
+  { field: 'ticker',    header: 'Ticker',    width: 90,  type: 'text',   sortable: true, filterable: true, copyEnabled: true, copyPrefix: 'NSE:' },
+  { field: 'timestamp', header: 'Timestamp', width: 110, type: 'number', sortable: true },
+  { field: 'date',      header: 'Date',      width: 100, type: 'text',   sortable: true },
+  { field: 'script',    header: 'Script',    width: 80,  type: 'text',   sortable: true },
+  { field: 'close',     header: 'Close',     width: 80,  type: 'number', sortable: true },
+];
+
 export function InvestmentsScreen() {
   const { theme } = useTheme();
   const c = theme.colors;
@@ -53,7 +62,16 @@ export function InvestmentsScreen() {
     setData([]);
     try {
       const res = await marketsService.getInvestments(type, segment, timeframe);
-      setData(Array.isArray(res.data) ? res.data : []);
+      const sorted = (Array.isArray(res.data) ? res.data : []).sort(
+        (a: any, b: any) => (b.timestamp ?? 0) - (a.timestamp ?? 0),
+      );
+      setData(sorted.map((o: any) => ({
+        ticker:    o.ticker,
+        timestamp: o.timestamp,
+        date:      o.date,
+        script:    o.script,
+        close:     o.close,
+      })));
     } catch (e: any) {
       Alert.alert('Error', e.message);
     } finally {
@@ -113,6 +131,7 @@ export function InvestmentsScreen() {
       {/* ── DynamicTable ──────────────────────────────────────────────────── */}
       <DynamicTable
         data={data}
+        schema={INV_SCHEMA}
         loading={loading}
         onRefresh={loadData}
 

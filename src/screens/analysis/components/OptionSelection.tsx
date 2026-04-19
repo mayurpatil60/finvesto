@@ -28,12 +28,12 @@ function pctColor(val: any): string | undefined {
 
 const SCHEMA: DynamicColumn[] = [
   { field: 'ticker',          header: 'Ticker',    width: 80,  type: 'text',   sortable: true, copyEnabled: true, copyPrefix: 'NSE:' },
+  { field: 'underline_ltp',   header: 'Stock LTP', width: 80,  type: 'number', sortable: true },
+  { field: 'change_per_month',header: 'Month %',   width: 80,  type: 'number', sortable: true, colorFn: pctColor },
   { field: 'mappDisplayName', header: 'Name',      width: 160, type: 'text',   sortable: true, filterable: true, copyEnabled: true, copyPrefix: '' },
   { field: 'option_type',     header: 'Type',      width: 60,  type: 'text',   sortable: true },
   { field: 'current_price',   header: 'Price',     width: 80,  type: 'number', sortable: true },
   { field: 'day_changeP',     header: 'Day %',     width: 70,  type: 'number', sortable: true, colorFn: pctColor },
-  { field: 'change_per_month',header: 'Month %',   width: 80,  type: 'number', sortable: true, colorFn: pctColor },
-  { field: 'underline_ltp',   header: 'Stock LTP', width: 80,  type: 'number', sortable: true },
   { field: 'volume',          header: 'Volume',    width: 80,  type: 'number', sortable: true },
   { field: 'amount',          header: 'Amount',    width: 80,  type: 'number', sortable: true },
 ];
