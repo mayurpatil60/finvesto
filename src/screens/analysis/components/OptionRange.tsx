@@ -1,7 +1,7 @@
 // ─── Option Range Component ────────────────────────────────────────────────────
 // Shows ATL, ATH and change-from-ATL for each option, loaded per batch
 
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -51,10 +51,14 @@ export function OptionRange() {
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<any[]>([]);
   const [refreshing, setRefreshing] = useState(false);
+  const scrollRef = useRef<ScrollView>(null);
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
-    loadBatch().finally(() => setRefreshing(false));
+    loadBatch(selectedBatch, true).finally(() => {
+      setRefreshing(false);
+      scrollRef.current?.scrollTo({ y: 0, animated: false });
+    });
   }, [selectedBatch]);
 
   useEffect(() => {
@@ -74,9 +78,9 @@ export function OptionRange() {
     }
   }
 
-  async function loadBatch(batchId = selectedBatch) {
+  async function loadBatch(batchId = selectedBatch, silent = false) {
     if (!batchId) return;
-    setLoading(true);
+    if (!silent) setLoading(true);
     try {
       const res = await optionRangeService.getBatch(batchId);
       setData((res.data ?? []).map((o: any) => ({
@@ -99,7 +103,7 @@ export function OptionRange() {
     } catch (e: any) {
       Alert.alert('Error', e.message ?? 'Failed to load batch');
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   }
 
@@ -145,7 +149,7 @@ export function OptionRange() {
   const batchOptions = batches.map((b) => ({ label: b, value: b }));
 
   return (
-    <ScrollView style={[styles.container, { backgroundColor: c.background }]} contentContainerStyle={styles.content} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={c.primary} />}>
+    <ScrollView ref={scrollRef} style={[styles.container, { backgroundColor: c.background }]} contentContainerStyle={styles.content} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={c.primary} />}>
       <CollapsibleCard title="Option Range">
       <Text style={[styles.subtitle, { color: c.textSecondary }]}>
         All-time low, all-time high and % change from ATL for each option.
@@ -172,25 +176,28 @@ export function OptionRange() {
             <Text style={styles.iconBtnText}>☁</Text>
           </TouchableOpacity>
 
-          <Text
-            style={[styles.btn, { backgroundColor: c.primary, color: '#fff', opacity: selectedBatch ? 1 : 0.5 }]}
+          <TouchableOpacity
+            style={[styles.btn, { backgroundColor: c.primary, opacity: loading || !selectedBatch ? 0.7 : 1 }]}
             onPress={() => loadBatch()}
+            disabled={loading || !selectedBatch}
           >
-            Load
-          </Text>
+            {loading
+              ? <ActivityIndicator color="#fff" size="small" />
+              : <Text style={[styles.btnText, { color: '#fff' }]}>Load</Text>
+            }
+          </TouchableOpacity>
 
           {data.length > 0 && (
-            <Text
-              style={[styles.btn, { backgroundColor: '#dc2626', color: '#fff' }]}
+            <TouchableOpacity
+              style={[styles.btn, { backgroundColor: '#dc2626' }]}
               onPress={confirmDelete}
+              disabled={loading}
             >
-              Delete
-            </Text>
+              <Text style={[styles.btnText, { color: '#fff' }]}>Delete</Text>
+            </TouchableOpacity>
           )}
         </View>
       </View>
-
-      {loading && <ActivityIndicator style={{ marginTop: SPACING.md }} color={c.primary} />}
 
       </CollapsibleCard>
 
@@ -214,8 +221,9 @@ const styles = StyleSheet.create({
   subtitle: { fontSize: 13, marginBottom: SPACING.sm },
   row: { flexDirection: 'row', flexWrap: 'wrap', gap: SPACING.sm, alignItems: 'flex-end', marginBottom: SPACING.sm },
   selectWrap: { flex: 1, minWidth: 160 },
-  btnRow: { flexDirection: 'row', gap: SPACING.sm },
-  btn: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 6, fontSize: 13, fontWeight: '600', overflow: 'hidden' },
+  btnRow: { flexDirection: 'row', gap: SPACING.sm, alignItems: 'center' },
+  btn: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 6, overflow: 'hidden', minWidth: 56, alignItems: 'center', justifyContent: 'center' },
+  btnText: { fontSize: 13, fontWeight: '600' },
   iconBtn: { width: 36, height: 36, borderRadius: 6, alignItems: 'center', justifyContent: 'center' },
   iconBtnText: { fontSize: 18 },
 });
