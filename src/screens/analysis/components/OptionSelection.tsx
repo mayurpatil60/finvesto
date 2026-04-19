@@ -1,10 +1,11 @@
 // ─── Option Selection Component ────────────────────────────────────────────────
 // Picks ONE Call + ONE Put at the selected strike index from ATM
 
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -50,6 +51,12 @@ export function OptionSelection() {
   const [level, setLevel] = useState(1);
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<any[]>([]);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    loadOptions().finally(() => setRefreshing(false));
+  }, [symbols, expiry, level]);
 
   useEffect(() => {
     analysisService.getExpiry().then(r => {
@@ -132,7 +139,7 @@ export function OptionSelection() {
   }
 
   return (
-    <ScrollView style={[styles.container, { backgroundColor: c.background }]} contentContainerStyle={styles.content}>
+    <ScrollView style={[styles.container, { backgroundColor: c.background }]} contentContainerStyle={styles.content} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={c.primary} />}>
       <CollapsibleCard title="Option Selection">
         <Text style={[styles.formNote, { color: c.textSecondary }]}>
           Enter NSE symbols and expiry, pick a strike index from ATM and press Load. e.g. symbols: NIFTY, BANKNIFTY

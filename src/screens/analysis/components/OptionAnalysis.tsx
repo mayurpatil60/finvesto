@@ -7,10 +7,11 @@
 //  • Multi-select tag filters + amount/volume filters
 //  • Index visible only after data is loaded
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -148,6 +149,12 @@ export function OptionAnalysis() {
   const [loading, setLoading] = useState(false);
   const [rawData, setRawData] = useState<any[]>([]);
   const [previousData, setPreviousData] = useState<any[]>([]);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    loadBatch().finally(() => setRefreshing(false));
+  }, [selectedBatch, selectedIndex]);
 
   useEffect(() => { loadBatches(); }, []);
 
@@ -205,7 +212,7 @@ export function OptionAnalysis() {
   const hasData = rawData.length > 0;
 
   return (
-    <ScrollView style={[styles.container, { backgroundColor: c.background }]} contentContainerStyle={styles.content}>
+    <ScrollView style={[styles.container, { backgroundColor: c.background }]} contentContainerStyle={styles.content} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={c.primary} />}>
       {/* ── Form card ─ */}
       <CollapsibleCard title="Option Analysis">
         <Text style={[styles.formNote, { color: c.textSecondary }]}>

@@ -1,9 +1,10 @@
 // ─── Option Search / History Component ────────────────────────────────────────────────
 
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -95,6 +96,13 @@ export function OptionSearch() {
   const [name, setName] = useState('');
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<any[]>([]);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const onRefresh = useCallback(() => {
+    if (!name.trim()) { return; }
+    setRefreshing(true);
+    search().finally(() => setRefreshing(false));
+  }, [name]);
 
   async function search() {
     setLoading(true);
@@ -119,7 +127,7 @@ export function OptionSearch() {
   }
 
   return (
-    <ScrollView style={[styles.container, { backgroundColor: c.background }]} contentContainerStyle={styles.content}>
+    <ScrollView style={[styles.container, { backgroundColor: c.background }]} contentContainerStyle={styles.content} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={c.primary} />}>
       <CollapsibleCard title="Option History">
         <Text style={[styles.formNote, { color: c.textSecondary }]}>
           Search historical records by option name (partial match). e.g. RECLTD 315 PE

@@ -1,9 +1,10 @@
 // ─── Investments Component ────────────────────────────────────────────────────
 
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -56,6 +57,12 @@ export function InvestmentsScreen() {
   const [timeframe, setTimeframe] = useState<InvTimeframe>('daily');
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<any[]>([]);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    loadData().finally(() => setRefreshing(false));
+  }, [type, segment, timeframe]);
 
   async function loadData() {
     setLoading(true);
@@ -80,7 +87,7 @@ export function InvestmentsScreen() {
   }
 
   return (
-    <ScrollView style={[styles.container, { backgroundColor: c.background }]} contentContainerStyle={styles.content}>
+    <ScrollView style={[styles.container, { backgroundColor: c.background }]} contentContainerStyle={styles.content} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={c.primary} />}>
       {/* ── Form card ──────────────────────────────────────────────────── */}
       <CollapsibleCard title="Investments">
         <Text style={[styles.formNote, { color: c.textSecondary }]}>

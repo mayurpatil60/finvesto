@@ -1,9 +1,10 @@
 // ─── Fundamentals Component ───────────────────────────────────────────────────
 
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -66,6 +67,12 @@ export function FundamentalsScreen() {
   const [query, setQuery] = useState<QueryValue>(QUERY_OPTIONS[0].value);
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<any[]>([]);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    loadData().finally(() => setRefreshing(false));
+  }, [group, query]);
 
   async function loadData() {
     setLoading(true);
@@ -95,7 +102,7 @@ export function FundamentalsScreen() {
   }
 
   return (
-    <ScrollView style={[styles.container, { backgroundColor: c.background }]} contentContainerStyle={styles.content}>
+    <ScrollView style={[styles.container, { backgroundColor: c.background }]} contentContainerStyle={styles.content} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={c.primary} />}>
       {/* ── Form card ────────────────────────────────────────────────────── */}
       <CollapsibleCard title="Fundamentals">
         <Text style={[styles.formNote, { color: c.textSecondary }]}>

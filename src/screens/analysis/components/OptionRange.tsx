@@ -1,10 +1,11 @@
 // ─── Option Range Component ────────────────────────────────────────────────────
 // Shows ATL, ATH and change-from-ATL for each option, loaded per batch
 
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -49,6 +50,12 @@ export function OptionRange() {
   const [selectedBatch, setSelectedBatch] = useState('');
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<any[]>([]);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    loadBatch().finally(() => setRefreshing(false));
+  }, [selectedBatch]);
 
   useEffect(() => {
     loadBatchIds();
@@ -138,7 +145,7 @@ export function OptionRange() {
   const batchOptions = batches.map((b) => ({ label: b, value: b }));
 
   return (
-    <ScrollView style={[styles.container, { backgroundColor: c.background }]} contentContainerStyle={styles.content}>
+    <ScrollView style={[styles.container, { backgroundColor: c.background }]} contentContainerStyle={styles.content} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={c.primary} />}>
       <CollapsibleCard title="Option Range">
       <Text style={[styles.subtitle, { color: c.textSecondary }]}>
         All-time low, all-time high and % change from ATL for each option.

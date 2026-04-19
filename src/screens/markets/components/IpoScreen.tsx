@@ -1,9 +1,10 @@
 // ─── IPO Component ────────────────────────────────────────────────────────────
 
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -90,6 +91,12 @@ export function IpoScreen() {
   const [year, setYear] = useState(CURRENT_YEAR);
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<any[]>([]);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    fetchData().finally(() => setRefreshing(false));
+  }, [ipoType, year]);
 
   async function fetchData(type: IpoType = ipoType, y: number = year) {
     setLoading(true);
@@ -113,7 +120,7 @@ export function IpoScreen() {
   }
 
   return (
-    <ScrollView style={[styles.container, { backgroundColor: c.background }]} contentContainerStyle={styles.content}>
+    <ScrollView style={[styles.container, { backgroundColor: c.background }]} contentContainerStyle={styles.content} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={c.primary} />}>
       {/* ── Form card ────────────────────────────────────────────────────── */}
       <CollapsibleCard title="IPO">
         <Text style={[styles.formNote, { color: c.textSecondary }]}>
