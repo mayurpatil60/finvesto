@@ -16,6 +16,7 @@ import { AppHeader } from '../../../components/layout/AppHeader';
 import { useTheme } from '../../../components/theme/ThemeProvider';
 import { SPACING } from '../../../types/constants';
 import { settingsService } from '../services/settings.service';
+import { Ionicons } from '@expo/vector-icons';
 
 export function CleanupScreen() {
   const { theme } = useTheme();
@@ -107,7 +108,7 @@ export function CleanupScreen() {
         >
           {deleting
             ? <ActivityIndicator color="#fff" />
-            : <Text style={styles.buttonText}>Delete Records</Text>
+            : <Ionicons name="trash-outline" size={18} color="#fff" />
           }
         </TouchableOpacity>
       </ScrollView>

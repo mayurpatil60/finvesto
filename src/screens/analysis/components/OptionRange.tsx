@@ -18,6 +18,7 @@ import { DynamicTable } from '../../../components/dynamic-table/DynamicTable';
 import { DynamicColumn } from '../../../components/dynamic-table/types';
 import { CollapsibleCard } from '../../../components/common/CollapsibleCard';
 import { SelectInput } from '../../../components/common/SelectInput';
+import { Ionicons } from '@expo/vector-icons';
 import { optionRangeService } from '../services/option-range.service';
 
 function pctColor(val: any): string | undefined {
@@ -156,47 +157,55 @@ export function OptionRange() {
       </Text>
 
       {/* Controls */}
-      <View style={styles.row}>
-        <View style={styles.selectWrap}>
-          <SelectInput
-            label="Batch"
-            value={selectedBatch}
-            options={batchOptions}
-            onChange={setSelectedBatch}
-            placeholder="Select batch"
-          />
-        </View>
+      <View style={styles.inputsRow}>
+        <SelectInput
+          label="Batch"
+          value={selectedBatch}
+          options={batchOptions}
+          onChange={setSelectedBatch}
+          placeholder="Select batch"
+          style={{ flex: 1, minWidth: 0 }}
+        />
+      </View>
 
-        <View style={styles.btnRow}>
+      <View style={styles.actionsRow}>
+        <TouchableOpacity
+          style={[styles.iconBtn, { backgroundColor: '#16a34a' }]}
+          onPress={fetchFresh}
+          disabled={loading}
+        >
+          <Text style={styles.iconBtnText}>☁</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.btn, { backgroundColor: c.primary, opacity: loading || !selectedBatch ? 0.7 : 1 }]}
+          onPress={() => loadBatch()}
+          disabled={loading || !selectedBatch}
+        >
+          {loading
+            ? <ActivityIndicator color="#fff" size="small" />
+            : <Text style={[styles.btnText, { color: '#fff' }]}>Load</Text>
+          }
+        </TouchableOpacity>
+
+        {data.length > 0 && (
           <TouchableOpacity
-            style={[styles.iconBtn, { backgroundColor: '#16a34a' }]}
-            onPress={fetchFresh}
+            style={[styles.btnIcon, { borderColor: c.border, backgroundColor: c.surface }]}
+            onPress={() => setData([])}
+          >
+            <Text style={{ color: c.text, fontSize: 15 }}>✕</Text>
+          </TouchableOpacity>
+        )}
+
+        {data.length > 0 && (
+          <TouchableOpacity
+            style={[styles.btnIcon, { borderColor: '#dc2626', backgroundColor: '#dc262622' }]}
+            onPress={confirmDelete}
             disabled={loading}
           >
-            <Text style={styles.iconBtnText}>☁</Text>
+            <Ionicons name="trash-outline" size={16} color="#dc2626" />
           </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.btn, { backgroundColor: c.primary, opacity: loading || !selectedBatch ? 0.7 : 1 }]}
-            onPress={() => loadBatch()}
-            disabled={loading || !selectedBatch}
-          >
-            {loading
-              ? <ActivityIndicator color="#fff" size="small" />
-              : <Text style={[styles.btnText, { color: '#fff' }]}>Load</Text>
-            }
-          </TouchableOpacity>
-
-          {data.length > 0 && (
-            <TouchableOpacity
-              style={[styles.btn, { backgroundColor: '#dc2626' }]}
-              onPress={confirmDelete}
-              disabled={loading}
-            >
-              <Text style={[styles.btnText, { color: '#fff' }]}>Delete</Text>
-            </TouchableOpacity>
-          )}
-        </View>
+        )}
       </View>
 
       </CollapsibleCard>
@@ -206,7 +215,7 @@ export function OptionRange() {
           data={data}
           schema={SCHEMA}
           loading={loading}
-          onRefresh={() => loadBatch()}
+          onRefresh={() => loadBatch(selectedBatch, true)}
           title="Option Range"
           emptyText="Select a batch and press Load."
         />
@@ -219,11 +228,11 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   content: { paddingTop: SPACING.md, paddingBottom: SPACING.xl },
   subtitle: { fontSize: 13, marginBottom: SPACING.sm },
-  row: { flexDirection: 'row', flexWrap: 'wrap', gap: SPACING.sm, alignItems: 'flex-end', marginBottom: SPACING.sm },
-  selectWrap: { flex: 1, minWidth: 160 },
-  btnRow: { flexDirection: 'row', gap: SPACING.sm, alignItems: 'center' },
+  inputsRow: { flexDirection: 'row', gap: SPACING.sm, marginBottom: SPACING.sm },
+  actionsRow: { flexDirection: 'row', gap: SPACING.sm, alignItems: 'center', marginBottom: SPACING.sm, justifyContent: 'flex-end' },
   btn: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 6, overflow: 'hidden', minWidth: 56, alignItems: 'center', justifyContent: 'center' },
   btnText: { fontSize: 13, fontWeight: '600' },
+  btnIcon: { width: 32, height: 32, borderRadius: 8, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
   iconBtn: { width: 36, height: 36, borderRadius: 6, alignItems: 'center', justifyContent: 'center' },
   iconBtnText: { fontSize: 18 },
 });

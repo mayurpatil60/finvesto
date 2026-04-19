@@ -58,6 +58,16 @@ export class AnalysisService {
     if (!res.ok) throw new Error(`Failed to fetch expiry: ${res.status}`);
     return res.json();
   }
+
+  /** DELETE /analysis/batch?batchId=... */
+  async deleteBatch(batchId: string): Promise<{ deletedCount: number }> {
+    const res = await fetch(
+      `${BASE_URL}/analysis/batch?batchId=${encodeURIComponent(batchId)}`,
+      { method: "DELETE" },
+    );
+    if (!res.ok) throw new Error(`Failed to delete batch: ${res.status}`);
+    return res.json();
+  }
 }
 
 export const analysisService = AnalysisService.getInstance();

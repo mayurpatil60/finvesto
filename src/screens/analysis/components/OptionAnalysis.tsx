@@ -206,6 +206,34 @@ export function OptionAnalysis() {
     loadBatch();
   }
 
+  function confirmDelete() {
+    if (!selectedBatch) return;
+    Alert.alert(
+      'Delete Batch',
+      `Delete "${selectedBatch}"?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              const res = await analysisService.deleteBatch(selectedBatch);
+              Alert.alert('Deleted', `${res.deletedCount} records removed`);
+              setSelectedBatch('');
+              setRawData([]);
+              setPreviousData([]);
+              setSelectedFilters([]);
+              loadBatches();
+            } catch (e: any) {
+              Alert.alert('Error', e.message ?? 'Failed to delete batch');
+            }
+          },
+        },
+      ],
+    );
+  }
+
   const filtered = useMemo(() => applyFilters(rawData, selectedFilters), [rawData, selectedFilters]);
 
   const batchOptions = batches.map(b => ({ label: b.replace('_', ' '), value: b }));
@@ -254,6 +282,15 @@ export function OptionAnalysis() {
             />
           )}
 
+          {hasData && (
+            <TouchableOpacity
+              style={[styles.btnIcon, { borderColor: '#dc2626', backgroundColor: '#dc262622' }]}
+              onPress={confirmDelete}
+              disabled={loading}
+            >
+              <Ionicons name="trash-outline" size={16} color="#dc2626" />
+            </TouchableOpacity>
+          )}
           {hasData && (
             <TouchableOpacity
               style={[styles.btnIcon, { borderColor: c.border, backgroundColor: c.surface }]}
