@@ -40,7 +40,7 @@ const SCHEMA: DynamicColumn[] = [
   { field: 'atl_ath_per',         header: 'ATL→ATH %', width: 90,  type: 'number', sortable: true, colorFn: pctColor },
   { field: 'atl_amount',          header: 'ATL Amt',    width: 90,  type: 'number', sortable: true },
   { field: 'amount',              header: 'Amount',     width: 90,  type: 'number', sortable: true },
-  { field: 'amount_diff',         header: 'Amt Diff',   width: 90,  type: 'number', sortable: true, colorFn: pctColor },
+  { field: 'amount_diff_pct',      header: 'Amt Diff %', width: 90,  type: 'number', sortable: true, colorFn: pctColor },
 ];
 
 export function OptionRange() {
@@ -100,7 +100,9 @@ export function OptionRange() {
         atl_ath_per: o.all_time_change_per,
         atl_amount: Math.round((o.all_time_low ?? 0) * (o.lot_size ?? 0)),
         amount: Math.round((o.current_price ?? 0) * (o.lot_size ?? 0)),
-        amount_diff: Math.round(((o.current_price ?? 0) - (o.all_time_low ?? 0)) * (o.lot_size ?? 0)),
+        amount_diff_pct: o.all_time_low
+          ? parseFloat((((o.current_price ?? 0) - o.all_time_low) / o.all_time_low * 100).toFixed(2))
+          : null,
       })));
     } catch (e: any) {
       Alert.alert('Error', e.message ?? 'Failed to load batch');
