@@ -38,7 +38,7 @@ export function SelectInput<T extends string | number>({ label, options, value, 
   return (
     <>
       <View style={[styles.wrapper, style]}>
-        <Text style={[styles.label, { color: c.textSecondary }]}>{label}</Text>
+        {!!label && <Text style={[styles.label, { color: c.textSecondary }]}>{label}</Text>}
         <TouchableOpacity
           style={[styles.trigger, { backgroundColor: c.surface, borderColor: c.border }]}
           onPress={() => setOpen(true)}
