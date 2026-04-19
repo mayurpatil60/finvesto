@@ -1,4 +1,5 @@
-// ─── Percentage Calculator ────────────────────────────────────────────────────
+// ─── Percentage Calculators ───────────────────────────────────────────────────
+// Three sentence-style calculators in collapsible cards
 
 import React, { useState } from 'react';
 import {
@@ -12,152 +13,194 @@ import { useTheme } from '../../../components/theme/ThemeProvider';
 import { CollapsibleCard } from '../../../components/common/CollapsibleCard';
 import { SPACING } from '../../../types/constants';
 
-export function PercentageCalculator() {
+// ── Shared inline input ──────────────────────────────────────────────────────
+function InlineInput({ value, onChange, placeholder, colors }: {
+  value: string;
+  onChange: (v: string) => void;
+  placeholder: string;
+  colors: any;
+}) {
+  return (
+    <TextInput
+      style={[styles.inlineInput, { backgroundColor: colors.surfaceVariant, borderColor: colors.border, color: colors.text }]}
+      placeholder={placeholder}
+      placeholderTextColor={colors.textSecondary}
+      keyboardType="numeric"
+      value={value}
+      onChangeText={onChange}
+    />
+  );
+}
+
+// ── Calculator 1: % Change ────────────────────────────────────────────────────
+export function PercentChangeCalculator() {
   const { theme } = useTheme();
   const c = theme.colors;
+  const [from, setFrom] = useState('');
+  const [to, setTo] = useState('');
+  const [result, setResult] = useState<number | null>(null);
 
-  const [value1, setValue1] = useState('');
-  const [value2, setValue2] = useState('');
-  const [result, setResult] = useState<string | null>(null);
-
-  const isValid = () =>
-    value1.trim() !== '' &&
-    value2.trim() !== '' &&
-    !isNaN(Number(value1)) &&
-    !isNaN(Number(value2)) &&
-    Number(value1) !== 0;
+  const isValid = () => from.trim() !== '' && to.trim() !== '' && !isNaN(Number(from)) && Number(from) !== 0;
 
   const calculate = () => {
-    const v1 = Number(value1);
-    const v2 = Number(value2);
-    const pct = (((v2 - v1) / Math.abs(v1)) * 100).toFixed(2);
-    setResult(pct);
+    const pct = ((Number(to) - Number(from)) / Math.abs(Number(from))) * 100;
+    setResult(Math.round(pct * 100) / 100);
   };
 
-  const reset = () => {
-    setValue1('');
-    setValue2('');
-    setResult(null);
-  };
+  const reset = () => { setFrom(''); setTo(''); setResult(null); };
+
+  const resultColor = result === null ? c.text : result >= 0 ? '#16a34a' : '#dc2626';
+  const resultLabel = result === null ? null : `${result >= 0 ? '+' : ''}${result}%`;
 
   return (
-    <CollapsibleCard title="Percentage Calculator">
-      {/* Subtitle */}
-      <Text style={[styles.subtitle, { color: c.textSecondary }]}>
-        Enter two values to calculate the percentage change between them.
-      </Text>
-
-      {/* Inputs */}
-      <View style={styles.inputRow}>
-        <View style={styles.inputGroup}>
-          <Text style={[styles.label, { color: c.textSecondary }]}>Value 1</Text>
-          <TextInput
-            style={[styles.input, { backgroundColor: c.surfaceVariant, borderColor: c.border, color: c.text }]}
-            placeholder="Enter value"
-            placeholderTextColor={c.textSecondary}
-            keyboardType="numeric"
-            value={value1}
-            onChangeText={setValue1}
-          />
-        </View>
-
-        <View style={styles.inputGroup}>
-          <Text style={[styles.label, { color: c.textSecondary }]}>Value 2</Text>
-          <TextInput
-            style={[styles.input, { backgroundColor: c.surfaceVariant, borderColor: c.border, color: c.text }]}
-            placeholder="Enter value"
-            placeholderTextColor={c.textSecondary}
-            keyboardType="numeric"
-            value={value2}
-            onChangeText={setValue2}
-          />
-        </View>
+    <CollapsibleCard title="% Change">
+      <View style={styles.sentenceRow}>
+        <Text style={[styles.word, { color: c.text }]}>What is the % change from</Text>
+        <InlineInput value={from} onChange={setFrom} placeholder="100" colors={c} />
+        <Text style={[styles.word, { color: c.text }]}>to</Text>
+        <InlineInput value={to} onChange={setTo} placeholder="150" colors={c} />
+        <Text style={[styles.word, { color: c.text }]}>?</Text>
       </View>
-
-      {/* Actions */}
       <View style={styles.actionRow}>
-        <TouchableOpacity
-          style={[styles.btn, styles.btnPrimary, { backgroundColor: c.primary }, !isValid() && styles.btnDisabled]}
-          onPress={calculate}
-          disabled={!isValid()}
-        >
-          <Text style={styles.btnText}>Submit</Text>
+        <TouchableOpacity style={[styles.btn, { backgroundColor: c.primary, opacity: isValid() ? 1 : 0.5 }]} onPress={calculate} disabled={!isValid()}>
+          <Text style={styles.btnText}>Calculate</Text>
         </TouchableOpacity>
-
-        {(result !== null || value1 !== '' || value2 !== '') && (
-          <TouchableOpacity
-            style={[styles.btn, styles.btnSecondary, { borderColor: c.border }]}
-            onPress={reset}
-          >
-            <Text style={[styles.btnText, { color: c.text }]}>✕</Text>
+        {(from || to || result !== null) && (
+          <TouchableOpacity style={[styles.btnIcon, { borderColor: c.border, backgroundColor: c.surface }]} onPress={reset}>
+            <Text style={{ color: c.text, fontSize: 15 }}>✕</Text>
           </TouchableOpacity>
         )}
-
-        {result !== null && (
-          <Text style={[styles.result, { color: c.primary }]}>{result}%</Text>
-        )}
+        {resultLabel && <Text style={[styles.result, { color: resultColor }]}>{resultLabel}</Text>}
       </View>
     </CollapsibleCard>
   );
 }
 
+// ── Calculator 2: % of a Number ───────────────────────────────────────────────
+export function PercentOfNumberCalculator() {
+  const { theme } = useTheme();
+  const c = theme.colors;
+  const [pct, setPct] = useState('');
+  const [num, setNum] = useState('');
+  const [result, setResult] = useState<number | null>(null);
+
+  const isValid = () => pct.trim() !== '' && num.trim() !== '' && !isNaN(Number(pct)) && !isNaN(Number(num));
+
+  const calculate = () => {
+    setResult(Math.round((Number(pct) / 100) * Number(num) * 100) / 100);
+  };
+
+  const reset = () => { setPct(''); setNum(''); setResult(null); };
+
+  return (
+    <CollapsibleCard title="% of a Number">
+      <View style={styles.sentenceRow}>
+        <Text style={[styles.word, { color: c.text }]}>What is</Text>
+        <InlineInput value={pct} onChange={setPct} placeholder="25" colors={c} />
+        <Text style={[styles.word, { color: c.text }]}>% of</Text>
+        <InlineInput value={num} onChange={setNum} placeholder="200" colors={c} />
+        <Text style={[styles.word, { color: c.text }]}>?</Text>
+      </View>
+      <View style={styles.actionRow}>
+        <TouchableOpacity style={[styles.btn, { backgroundColor: c.primary, opacity: isValid() ? 1 : 0.5 }]} onPress={calculate} disabled={!isValid()}>
+          <Text style={styles.btnText}>Calculate</Text>
+        </TouchableOpacity>
+        {(pct || num || result !== null) && (
+          <TouchableOpacity style={[styles.btnIcon, { borderColor: c.border, backgroundColor: c.surface }]} onPress={reset}>
+            <Text style={{ color: c.text, fontSize: 15 }}>✕</Text>
+          </TouchableOpacity>
+        )}
+        {result !== null && <Text style={[styles.result, { color: c.primary }]}>{result}</Text>}
+      </View>
+    </CollapsibleCard>
+  );
+}
+
+// ── Calculator 3: Value as % of Total ────────────────────────────────────────
+export function ValueAsPercentCalculator() {
+  const { theme } = useTheme();
+  const c = theme.colors;
+  const [val, setVal] = useState('');
+  const [total, setTotal] = useState('');
+  const [result, setResult] = useState<number | null>(null);
+
+  const isValid = () => val.trim() !== '' && total.trim() !== '' && !isNaN(Number(val)) && !isNaN(Number(total)) && Number(total) !== 0;
+
+  const calculate = () => {
+    setResult(Math.round((Number(val) / Number(total)) * 100 * 100) / 100);
+  };
+
+  const reset = () => { setVal(''); setTotal(''); setResult(null); };
+
+  return (
+    <CollapsibleCard title="Value as % of Total">
+      <View style={styles.sentenceRow}>
+        <InlineInput value={val} onChange={setVal} placeholder="50" colors={c} />
+        <Text style={[styles.word, { color: c.text }]}>is what % of</Text>
+        <InlineInput value={total} onChange={setTotal} placeholder="200" colors={c} />
+        <Text style={[styles.word, { color: c.text }]}>?</Text>
+      </View>
+      <View style={styles.actionRow}>
+        <TouchableOpacity style={[styles.btn, { backgroundColor: c.primary, opacity: isValid() ? 1 : 0.5 }]} onPress={calculate} disabled={!isValid()}>
+          <Text style={styles.btnText}>Calculate</Text>
+        </TouchableOpacity>
+        {(val || total || result !== null) && (
+          <TouchableOpacity style={[styles.btnIcon, { borderColor: c.border, backgroundColor: c.surface }]} onPress={reset}>
+            <Text style={{ color: c.text, fontSize: 15 }}>✕</Text>
+          </TouchableOpacity>
+        )}
+        {result !== null && <Text style={[styles.result, { color: c.primary }]}>{result}%</Text>}
+      </View>
+    </CollapsibleCard>
+  );
+}
+
+// ── Styles ────────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
-  subtitle: {
-    fontSize: 12,
-    marginBottom: SPACING.sm,
-  },
-  inputRow: {
+  sentenceRow: {
     flexDirection: 'row',
-    gap: SPACING.sm,
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    gap: SPACING.xs ?? 6,
     marginBottom: SPACING.sm,
   },
-  inputGroup: {
-    flex: 1,
+  word: {
+    fontSize: 14,
   },
-  label: {
-    fontSize: 12,
-    fontWeight: '500',
-    marginBottom: 4,
-  },
-  input: {
+  inlineInput: {
     borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: SPACING.sm,
-    paddingVertical: SPACING.sm,
-    fontSize: 13,
+    borderRadius: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    fontSize: 14,
+    width: 72,
+    textAlign: 'center',
   },
   actionRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'flex-end',
     gap: SPACING.sm,
-    marginTop: SPACING.sm,
+    justifyContent: 'flex-end',
   },
   btn: {
+    borderRadius: 6,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  btnText: { color: '#fff', fontWeight: '600', fontSize: 13 },
+  btnIcon: {
+    width: 32,
+    height: 32,
     borderRadius: 8,
-    paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.sm,
-  },
-  btnPrimary: {
-    minWidth: 80,
-    alignItems: 'center',
-  },
-  btnSecondary: {
     borderWidth: 1,
-    minWidth: 40,
     alignItems: 'center',
-  },
-  btnDisabled: {
-    opacity: 0.4,
-  },
-  btnText: {
-    color: '#FFFFFF',
-    fontSize: 13,
-    fontWeight: '500',
+    justifyContent: 'center',
   },
   result: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '700',
-    marginLeft: SPACING.sm,
   },
 });
+

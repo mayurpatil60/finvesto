@@ -6,8 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppHeader } from '../../components/layout/AppHeader';
 import { useTheme } from '../../components/theme/ThemeProvider';
 import { SPACING } from '../../types/constants';
-import { PercentageCalculator } from './components/PercentageCalculator';
-import { PremiumCalculator } from './components/PremiumCalculator';
+import { PercentChangeCalculator, PercentOfNumberCalculator, ValueAsPercentCalculator } from './components/PercentageCalculator';
 
 export function ToolsScreen() {
   const { theme } = useTheme();
@@ -38,8 +37,9 @@ export function ToolsScreen() {
           />
         }
       >
-        <PercentageCalculator key={`pct-${refreshKey}`} />
-        <PremiumCalculator key={`prm-${refreshKey}`} />
+        <PercentChangeCalculator key={`pct-change-${refreshKey}`} />
+        <PercentOfNumberCalculator key={`pct-of-${refreshKey}`} />
+        <ValueAsPercentCalculator key={`val-pct-${refreshKey}`} />
       </ScrollView>
     </SafeAreaView>
   );

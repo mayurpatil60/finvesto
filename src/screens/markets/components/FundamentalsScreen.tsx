@@ -31,13 +31,16 @@ const GROUP_OPTIONS: SelectOption<GroupValue>[] = [
 ];
 
 const QUERY_OPTIONS: SelectOption<QueryValue>[] = [
-  { label: 'RSI crossing 60 ↑', value: 'prev_rsi < 60 && rsi > 60' },
-  { label: 'RSI crossing 60 ↓', value: 'prev_rsi > 60 && rsi < 60' },
-  { label: 'RSI crossing 40 ↑', value: 'prev_rsi < 40 && rsi > 40' },
-  { label: 'RSI crossing 30 ↑', value: 'prev_rsi < 30 && rsi > 30' },
-  { label: 'RSI below 30', value: 'rsi < 30' },
-  { label: 'RSI below 40', value: 'rsi < 40' },
-  { label: 'All (Price > 0)', value: 'currentPrice > 0' },
+  { label: 'RSI crossing 60 ↑',   value: 'prev_rsi < 60 && rsi > 60' },
+  { label: 'RSI crossing 60 ↓',   value: 'prev_rsi > 60 && rsi < 60' },
+  { label: 'RSI crossing 40 ↑',   value: 'prev_rsi < 40 && rsi > 40' },
+  { label: 'RSI crossing 30 ↑',   value: 'prev_rsi < 30 && rsi > 30' },
+  { label: 'RSI below 30',         value: 'rsi < 30' },
+  { label: 'RSI below 40',         value: 'rsi < 40' },
+  { label: 'Above All-Time High',  value: 'currentPrice > life_time_high' },
+  { label: 'Below All-Time Low',   value: 'currentPrice < life_time_low' },
+  { label: 'Below 10-Year Low',    value: 'currentPrice < ten_year_low' },
+  { label: 'All (Price > 0)',      value: 'currentPrice > 0' },
 ];
 
 // Color-code change% columns
@@ -78,14 +81,18 @@ export function FundamentalsScreen() {
     setLoading(true);
     setData([]);
     try {
-      const params: Record<string, string> = { groupName: group, query };
+      const params: Record<string, string> = {
+        groupName: group,
+        query,
+        columns: 'currentPrice,rsi,prev_rsi,qtr_changeP,month_changeP,week_changeP',
+      };
       if (group === 'fno-stocks') params['groupType'] = 'others';
       const res = await marketsService.getFundamentals(params);
       const flat: any[] = [];
       const pages = Array.isArray(res.data) ? res.data : [res.data];
       for (const page of pages) {
         if (page?.body?.tableHeaders && page?.body?.tableData) {
-          const headers = page.body.tableHeaders.map((h: any) => h.unique_name || h.display_name || h);
+          const headers = page.body.tableHeaders.map((h: any) => h.unique_name);
           for (const row of page.body.tableData) {
             const obj: any = {};
             headers.forEach((key: string, idx: number) => { obj[key] = row[idx]; });
