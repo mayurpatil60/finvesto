@@ -67,7 +67,19 @@ export function OptionRange() {
     setLoading(true);
     try {
       const res = await optionRangeService.getBatch(selectedBatch);
-      setData(res.data ?? []);
+      setData((res.data ?? []).map((o: any) => ({
+        ticker: o.ticker,
+        underline_ltp: o.underline_ltp,
+        change_per_month: o.change_per_month,
+        rsi: o.rsi,
+        mappDisplayName: o.mappDisplayName,
+        current_price: o.current_price,
+        day_changeP: o.day_changeP,
+        volume: o.volume,
+        all_time_low: o.all_time_low,
+        all_time_high: o.all_time_high,
+        all_time_change_per: o.all_time_change_per,
+      })));
     } catch (e: any) {
       Alert.alert('Error', e.message ?? 'Failed to load batch');
     } finally {
