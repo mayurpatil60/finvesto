@@ -19,14 +19,9 @@ import { SPACING } from '../../../types/constants';
 import { CollapsibleCard } from '../../../components/common/CollapsibleCard';
 import { marketsService } from '../services/markets.service';
 
-type InvType = 'default' | 'momentum';
 type InvSegment = 'cash' | 'futures' | 'indices' | 'etf';
 type InvTimeframe = 'daily' | 'weekly' | 'monthly' | 'quarterly';
 
-const TYPE_OPTIONS: SelectOption<InvType>[] = [
-  { label: 'Default', value: 'default' },
-  { label: 'Momentum', value: 'momentum' },
-];
 const SEGMENT_OPTIONS: SelectOption<InvSegment>[] = [
   { label: 'Cash', value: 'cash' },
   { label: 'Futures', value: 'futures' },
@@ -52,7 +47,6 @@ export function InvestmentsScreen() {
   const { theme } = useTheme();
   const c = theme.colors;
 
-  const [type, setType] = useState<InvType>('default');
   const [segment, setSegment] = useState<InvSegment>('cash');
   const [timeframe, setTimeframe] = useState<InvTimeframe>('daily');
   const [loading, setLoading] = useState(false);
@@ -63,13 +57,13 @@ export function InvestmentsScreen() {
     if (!data.length) { setRefreshing(false); return; }
     setRefreshing(true);
     loadData().finally(() => setRefreshing(false));
-  }, [type, segment, timeframe, data]);
+  }, [segment, timeframe, data]);
 
   async function loadData() {
     setLoading(true);
     setData([]);
     try {
-      const res = await marketsService.getInvestments(type, segment, timeframe);
+      const res = await marketsService.getInvestments('default', segment, timeframe);
       const sorted = (Array.isArray(res.data) ? res.data : []).sort(
         (a: any, b: any) => (b.timestamp ?? 0) - (a.timestamp ?? 0),
       );
@@ -92,15 +86,9 @@ export function InvestmentsScreen() {
       {/* ── Form card ──────────────────────────────────────────────────── */}
       <CollapsibleCard title="Investments">
         <Text style={[styles.formNote, { color: c.textSecondary }]}>
-          Chartink backtest investments. Select type, segment and timeframe, then press Load.
+        Chartink backtest investments. Select segment and timeframe, then press Load.
         </Text>
         <View style={styles.selectsRow}>
-          <SelectInput
-            label="Type"
-            options={TYPE_OPTIONS}
-            value={type}
-            onChange={(v) => { setType(v); setData([]); }}
-          />
           <SelectInput
             label="Segment"
             options={SEGMENT_OPTIONS}
@@ -144,7 +132,7 @@ export function InvestmentsScreen() {
         onRefresh={loadData}
 
         title="Investments"
-        emptyText="Select type, segment and timeframe, then press Load."
+        emptyText="Select segment and timeframe, then press Load."
       />
     </ScrollView>
   );
