@@ -9,10 +9,9 @@ import { SPACING } from '../../types/constants';
 import { OptionAnalysis } from './components/OptionAnalysis';
 import { OptionSearch } from './components/OptionSearch';
 import { OptionSelection } from './components/OptionSelection';
-import { PercentageChange } from './components/PercentageChange';
-
-type AnalysisTab = 'Analysis' | 'History' | 'Selection' | '% Change';
-const TABS: AnalysisTab[] = ['Analysis', 'History', 'Selection', '% Change'];
+import { OptionRange } from './components/OptionRange';
+type AnalysisTab = 'Analysis' | 'History' | 'Selection' | 'Range';
+const TABS: AnalysisTab[] = ['Analysis', 'History', 'Selection', 'Range'];
 
 export function AnalysisScreen() {
   const { theme } = useTheme();
@@ -55,7 +54,7 @@ export function AnalysisScreen() {
         {activeTab === 'Analysis' && <OptionAnalysis />}
         {activeTab === 'History' && <OptionSearch />}
         {activeTab === 'Selection' && <OptionSelection />}
-        {activeTab === '% Change' && <PercentageChange />}
+        {activeTab === 'Range' && <OptionRange />}
       </View>
     </SafeAreaView>
   );
