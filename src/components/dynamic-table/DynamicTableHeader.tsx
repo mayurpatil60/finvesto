@@ -52,15 +52,25 @@ export function DynamicTableHeader({
               onPress={() => col.sortable !== false && onSort(col.field)}
               activeOpacity={col.sortable !== false ? 0.7 : 1}
             >
-              <View style={styles.headerContent}>
+              <View style={[styles.headerContent, col.type === 'number' && styles.headerContentRight]}>
+                {isSorted && col.type === 'number' && (
+                  <View style={styles.sortBadge}>
+                    {sorts.length > 1 && (
+                      <Text style={[styles.sortPriority, { color: c.primary }]}>{sortState.priority}</Text>
+                    )}
+                    <Text style={[styles.sortArrow, { color: c.primary }]}>
+                      {sortState.dir === 'asc' ? '↑' : '↓'}
+                    </Text>
+                  </View>
+                )}
                 <Text
-                  style={[styles.headerText, { color: isSorted ? c.primary : c.text }]}
+                  style={[styles.headerText, { color: isSorted ? c.primary : c.text }, col.type === 'number' && styles.headerTextRight]}
                   numberOfLines={1}
                 >
                   {col.header}
                 </Text>
-                {/* Multi-sort indicator */}
-                {isSorted && (
+                {/* Multi-sort indicator (left side for non-number cols) */}
+                {isSorted && col.type !== 'number' && (
                   <View style={styles.sortBadge}>
                     {sorts.length > 1 && (
                       <Text style={[styles.sortPriority, { color: c.primary }]}>{sortState.priority}</Text>
@@ -135,11 +145,17 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: 3,
   },
+  headerContentRight: {
+    justifyContent: 'flex-end',
+  },
   headerText: {
     fontSize: 11,
     fontWeight: '700',
     letterSpacing: 0.3,
     flexShrink: 1,
+  },
+  headerTextRight: {
+    textAlign: 'right' as const,
   },
   sortBadge: {
     flexDirection: 'row',

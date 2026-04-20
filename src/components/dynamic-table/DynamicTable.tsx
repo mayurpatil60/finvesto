@@ -337,7 +337,7 @@ export function DynamicTable({
                 return (
                   <View key={col.field} style={styles.cardRow}>
                     <Text style={[styles.cardLabel, { color: c.textSecondary }]}>{col.header}</Text>
-                    <View style={[styles.cardValueRow, cell ? { justifyContent: 'flex-end' } : {}]}>
+                    <View style={[styles.cardValueRow, (cell || col.type === 'number') ? { justifyContent: 'flex-end' } : {}]}>
                       <Text style={[styles.cardValue, { color, textAlign }]}>{display}</Text>
                       {col.copyEnabled && (
                         <TouchableOpacity
@@ -421,10 +421,11 @@ export function DynamicTable({
                     if (!col.colorFn && cell?.isPercent) {
                       color = cell.numVal > 0 ? '#22c55e' : cell.numVal < 0 ? '#ef4444' : c.text;
                     }
-                    const textAlign = cell ? ('right' as const) : ('left' as const);
+                    const isNumeric = (cell || col.type === 'number');
+                    const textAlign = isNumeric ? ('right' as const) : ('left' as const);
                     return (
-                      <View key={col.field} style={[styles.cell, { width: col.width ?? DEFAULT_COL_WIDTH }]}>
-                        <Text style={[styles.cellText, { color, flex: col.copyEnabled ? 1 : undefined, textAlign }]} numberOfLines={2}>
+                      <View key={col.field} style={[styles.cell, { width: col.width ?? DEFAULT_COL_WIDTH }, isNumeric && !col.copyEnabled ? { justifyContent: 'flex-end' } : {}]}>
+                        <Text style={[styles.cellText, { color, flex: 1, textAlign }]} numberOfLines={2}>
                           {display}
                         </Text>
                         {col.copyEnabled && (
