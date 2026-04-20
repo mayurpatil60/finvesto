@@ -38,10 +38,6 @@ const SCHEMA: DynamicColumn[] = [
   { field: 'volume',              header: 'Volume',     width: 80,  type: 'number', sortable: true },
   { field: 'atl_ath',             header: 'ATL / ATH',  width: 130, type: 'text',   sortable: true },
   { field: 'atl_ath_per',         header: 'ATL→ATH %', width: 90,  type: 'number', sortable: true, colorFn: pctColor },
-  { field: 'atl_amount',          header: 'ATL Amt',    width: 90,  type: 'number', sortable: true },
-  { field: 'ath_amount',          header: 'ATH Amt',    width: 90,  type: 'number', sortable: true },
-  { field: 'current_amount',      header: 'Curr Amt',   width: 90,  type: 'number', sortable: true },
-  { field: 'atl_curr_price_diff_per', header: 'ATL→Curr %', width: 90, type: 'number', sortable: true, colorFn: pctColor },
 ];
 
 export function OptionRange() {
@@ -100,12 +96,6 @@ export function OptionRange() {
           : null,
         atl_ath_per: o.all_time_low && o.all_time_high
           ? parseFloat((((o.all_time_high - o.all_time_low) / o.all_time_low) * 100).toFixed(1))
-          : null,
-        atl_amount: Math.round((o.all_time_low ?? 0) * (o.lot_size ?? 0)),
-        ath_amount: Math.round((o.all_time_high ?? 0) * (o.lot_size ?? 0)),
-        current_amount: Math.round((o.current_price ?? 0) * (o.lot_size ?? 0)),
-        atl_curr_price_diff_per: o.all_time_low
-          ? parseFloat((((o.current_price - o.all_time_low) / o.all_time_low) * 100).toFixed(1))
           : null,
       })));
     } catch (e: any) {
