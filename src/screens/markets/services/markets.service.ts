@@ -43,14 +43,14 @@ export class MarketsService {
   // ── IPO ──────────────────────────────────────────────────────────────────────
 
   async getIpoUpcoming(): Promise<{ status: string; data: any }> {
-    const res = await fetch(`${BASE_URL}/api/ipo-upcoming`);
+    const res = await fetch(`${BASE_URL}/markets/ipo-upcoming`);
     if (!res.ok)
       throw new Error(`Failed to fetch upcoming IPOs: ${res.status}`);
     return res.json();
   }
 
   async getIpoListed(year: number): Promise<{ status: string; data: any[] }> {
-    const res = await fetch(`${BASE_URL}/api/ipo-listed?year=${year}`);
+    const res = await fetch(`${BASE_URL}/markets/ipo-listed?year=${year}`);
     if (!res.ok) throw new Error(`Failed to fetch listed IPOs: ${res.status}`);
     return res.json();
   }
@@ -61,7 +61,7 @@ export class MarketsService {
     params: Record<string, string>,
   ): Promise<{ status: string; data: any[] }> {
     const qs = new URLSearchParams(params).toString();
-    const res = await fetch(`${BASE_URL}/api/fundamentals?${qs}`);
+    const res = await fetch(`${BASE_URL}/markets/fundamentals?${qs}`);
     if (!res.ok) throw new Error(`Failed to fetch fundamentals: ${res.status}`);
     return res.json();
   }
@@ -74,7 +74,7 @@ export class MarketsService {
     timeframe: string,
   ): Promise<{ status: string; data: any[] }> {
     const res = await fetch(
-      `${BASE_URL}/api/investments?type=${encodeURIComponent(type)}&segment=${encodeURIComponent(segment)}&timeframe=${encodeURIComponent(timeframe)}`,
+      `${BASE_URL}/markets/investments?type=${encodeURIComponent(type)}&segment=${encodeURIComponent(segment)}&timeframe=${encodeURIComponent(timeframe)}`,
     );
     if (!res.ok) throw new Error(`Failed to fetch investments: ${res.status}`);
     return res.json();
