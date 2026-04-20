@@ -48,8 +48,8 @@ export function CleanupScreen() {
       return;
     }
     Alert.alert(
-      'Delete Analysis Records',
-      `This will permanently delete all analysis records for expiry "${expiryDate.trim()}". This cannot be undone.`,
+      'Delete Option Range Records',
+      `This will permanently delete all option range records for expiry "${expiryDate.trim()}". This cannot be undone.`,
       [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -58,7 +58,7 @@ export function CleanupScreen() {
           onPress: async () => {
             setDeleting(true);
             try {
-              const result = await settingsService.deleteAnalysisByExpiry(expiryDate.trim());
+              const result = await settingsService.deleteOptionRangeByExpiry(expiryDate.trim());
               Alert.alert('Done', `Deleted ${result.deletedCount} record(s) for expiry "${expiryDate.trim()}".`);
             } catch {
               Alert.alert('Error', 'Failed to delete records. Please try again.');
@@ -73,10 +73,10 @@ export function CleanupScreen() {
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: c.background }]}>
-      <AppHeader title="Cleanup Analysis Data" />
+      <AppHeader title="Cleanup Options Data" />
       <ScrollView contentContainerStyle={styles.body}>
         <Text style={[styles.note, { color: c.textSecondary }]}>
-          Delete all analysis records for a specific expiry date. This action is permanent and cannot be undone.
+          Delete all option range records for a specific expiry date. This action is permanent and cannot be undone.
         </Text>
 
         <Text style={[styles.sectionLabel, { color: c.textSecondary }]}>EXPIRY DATE</Text>

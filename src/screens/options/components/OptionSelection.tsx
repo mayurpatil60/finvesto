@@ -19,7 +19,7 @@ import { DynamicTable } from '../../../components/dynamic-table/DynamicTable';
 import { DynamicColumn } from '../../../components/dynamic-table/types';
 import { CollapsibleCard } from '../../../components/common/CollapsibleCard';
 import { SelectInput } from '../../../components/common/SelectInput';
-import { analysisService } from '../services/analysis.service';
+import { optionChainService } from '../services/option-chain.service';
 
 function pctColor(val: any): string | undefined {
   const n = parseFloat(String(val ?? ''));
@@ -60,7 +60,7 @@ export function OptionSelection() {
   }, [symbols, expiry, level, data]);
 
   useEffect(() => {
-    analysisService.getExpiry().then(r => {
+    optionChainService.getExpiry().then(r => {
       if (r.expiryDate) setExpiry(r.expiryDate);
     }).catch(() => {});
   }, []);
@@ -73,7 +73,7 @@ export function OptionSelection() {
     setLoading(true);
     setData([]);
     try {
-      const res = await analysisService.getOptionChain(symbols.trim(), expiry.trim());
+      const res = await optionChainService.getOptionChain(symbols.trim(), expiry.trim());
       const table: any[] = res.data?.tableDataV2 ?? res.data?.tableData ?? [];
       const basePrice: number = res.data?.stockLevelData?.currentPrice ?? 0;
 

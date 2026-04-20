@@ -80,8 +80,8 @@ export function SettingsScreen() {
           <View style={[styles.divider, { backgroundColor: c.border }]} />
           <TouchableOpacity style={styles.row} onPress={() => navigation.navigate('Cleanup')}>
             <View style={styles.rowLeft}>
-              <Text style={[styles.rowTitle, { color: c.text }]}>Cleanup Analysis Data</Text>
-              <Text style={[styles.rowSubtitle, { color: c.textSecondary }]}>Delete analysis records by expiry</Text>
+              <Text style={[styles.rowTitle, { color: c.text }]}>Cleanup Options Data</Text>
+              <Text style={[styles.rowSubtitle, { color: c.textSecondary }]}>Delete option range records by expiry</Text>
             </View>
             <Text style={[styles.rowValue, { color: c.textSecondary }]}>›</Text>
           </TouchableOpacity>

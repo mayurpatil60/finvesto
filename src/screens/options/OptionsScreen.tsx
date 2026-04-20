@@ -1,4 +1,4 @@
-// ─── Analysis Screen ──────────────────────────────────────────────────────────
+// ─── Options Screen ──────────────────────────────────────────────────────────
 
 import React, { useRef, useState } from 'react';
 import { PanResponder, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
@@ -6,18 +6,17 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppHeader } from '../../components/layout/AppHeader';
 import { useTheme } from '../../components/theme/ThemeProvider';
 import { SPACING } from '../../types/constants';
-import { OptionAnalysis } from './components/OptionAnalysis';
-import { OptionSearch } from './components/OptionSearch';
 import { OptionSelection } from './components/OptionSelection';
 import { OptionRange } from './components/OptionRange';
-type AnalysisTab = 'Analysis' | 'History' | 'Selection' | 'Range';
-const TABS: AnalysisTab[] = ['Analysis', 'History', 'Selection', 'Range'];
+import { OptionTrack } from './components/OptionTrack';
+type OptionsTab = 'Track' | 'Range' | 'Selection';
+const TABS: OptionsTab[] = ['Track', 'Range', 'Selection'];
 
-export function AnalysisScreen() {
+export function OptionsScreen() {
   const { theme } = useTheme();
   const c = theme.colors;
-  const [activeTab, setActiveTab] = useState<AnalysisTab>('Analysis');
-  const activeTabRef = useRef(activeTab);
+  const [activeTab, setActiveTab] = useState<OptionsTab>('Track');
+  const activeTabRef = useRef<OptionsTab>(activeTab);
   activeTabRef.current = activeTab;
 
   const swipePanResponder = useRef(
@@ -35,7 +34,7 @@ export function AnalysisScreen() {
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: c.background }]}>
-      <AppHeader title="Analysis" />
+      <AppHeader title="Options" />
 
       {/* Top tabs */}
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={[styles.tabBar, { borderBottomColor: c.border }]}>
@@ -51,10 +50,9 @@ export function AnalysisScreen() {
       </ScrollView>
 
       <View style={styles.content} {...swipePanResponder.panHandlers}>
-        {activeTab === 'Analysis' && <OptionAnalysis />}
-        {activeTab === 'History' && <OptionSearch />}
-        {activeTab === 'Selection' && <OptionSelection />}
+        {activeTab === 'Track' && <OptionTrack />}
         {activeTab === 'Range' && <OptionRange />}
+        {activeTab === 'Selection' && <OptionSelection />}
       </View>
     </SafeAreaView>
   );

@@ -3,14 +3,14 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
-import { AnalysisScreen } from '../screens/analysis/AnalysisScreen';
+import { OptionsScreen } from '../screens/options/OptionsScreen';
 import { MarketsScreen } from '../screens/markets/MarketsScreen';
 import { ToolsScreen } from '../screens/tools/ToolsScreen';
 import { SettingsNavigator } from './SettingsNavigator';
 import { useTheme } from '../components/theme/ThemeProvider';
 
 export type BottomTabParamList = {
-  Analysis: undefined;
+  Options: undefined;
   Markets: undefined;
   Tools: undefined;
   Settings: undefined;
@@ -22,7 +22,7 @@ type TabName = keyof BottomTabParamList;
 type IconName = React.ComponentProps<typeof Ionicons>['name'];
 
 const TAB_ICONS: Record<TabName, { active: IconName; inactive: IconName }> = {
-  Analysis: { active: 'bar-chart', inactive: 'bar-chart-outline' },
+  Options:  { active: 'bar-chart', inactive: 'bar-chart-outline' },
   Markets:  { active: 'trending-up', inactive: 'trending-up-outline' },
   Tools:    { active: 'construct', inactive: 'construct-outline' },
   Settings: { active: 'settings', inactive: 'settings-outline' },
@@ -34,7 +34,7 @@ export function BottomTabNavigator() {
 
   return (
     <Tab.Navigator
-      initialRouteName="Analysis"
+      initialRouteName="Options"
       screenOptions={({ route }) => ({
         headerShown: false,
         tabBarShowLabel: false,
@@ -58,7 +58,7 @@ export function BottomTabNavigator() {
         },
       })}
     >
-      <Tab.Screen name="Analysis" component={AnalysisScreen} />
+      <Tab.Screen name="Options" component={OptionsScreen} />
       <Tab.Screen name="Markets" component={MarketsScreen} />
       <Tab.Screen name="Tools" component={ToolsScreen} />
       <Tab.Screen name="Settings" component={SettingsNavigator} />

@@ -28,14 +28,15 @@ export class SettingsService {
     return res.json();
   }
 
-  async deleteAnalysisByExpiry(
+  async deleteOptionRangeByExpiry(
     expiry: string,
   ): Promise<{ status: string; deletedCount: number }> {
     const res = await fetch(
-      `${BASE_URL}/analysis/by-expiry?expiry=${encodeURIComponent(expiry)}`,
+      `${BASE_URL}/options/option-range/by-expiry?expiry=${encodeURIComponent(expiry)}`,
       { method: "DELETE" },
     );
-    if (!res.ok) throw new Error(`Failed to delete analysis: ${res.status}`);
+    if (!res.ok)
+      throw new Error(`Failed to delete option range: ${res.status}`);
     return res.json();
   }
 }
