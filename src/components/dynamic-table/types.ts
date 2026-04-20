@@ -22,6 +22,13 @@ export interface DynamicColumn {
   /** Prefix added when copying. e.g. "NSE:" */
   copyPrefix?: string;
   /**
+   * Mark this column as a percentage column.
+   * Auto-detected when the field name ends with `_per`, `_percentage`, or `%`
+   * (case-insensitive). Percentage columns are right-aligned and colored
+   * green (positive) / red (negative). Values may or may not carry a `%` suffix.
+   */
+  isPercentage?: boolean;
+  /**
    * Return a CSS/hex color for the cell value.
    * Return undefined to use the default text color.
    */

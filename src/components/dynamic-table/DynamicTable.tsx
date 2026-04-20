@@ -49,6 +49,10 @@ const DEFAULT_PAGE_SIZE_OPTIONS = [5, 10, 20];
 const ROW_HEIGHT = 34;
 
 // ── Schema auto-generation ────────────────────────────────────────────────────
+/** Field names ending with these suffixes are percentage columns.
+ * Also matches a trailing capital P (e.g. day_changeP, underline_day_changeP). */
+const PCT_SUFFIX_RE = /(_per|_percentage|%|P)$/;
+
 function generateSchema(data: any[]): DynamicColumn[] {
   if (!data.length) return [];
   return Object.keys(data[0]).map(key => ({
@@ -60,7 +64,38 @@ function generateSchema(data: any[]): DynamicColumn[] {
     sortable: true,
     filterable: true,
     copyEnabled: false,
+    isPercentage: PCT_SUFFIX_RE.test(key),
   }));
+}
+
+// ── Cell formatting helpers ──────────────────────────────────────────────────
+type CellInfo = { display: string; numVal: number; isPercent: boolean };
+
+/**
+ * Parse a cell value into structured info for formatting.
+ * @param val        Raw cell value
+ * @param isPercentCol  Whether the column is marked as a percentage column
+ */
+function parseCellValue(val: any, isPercentCol = false): CellInfo | null {
+  if (val === null || val === undefined || val === '') return null;
+  const str = String(val).trim();
+  // Explicit % suffix: always treat as percent regardless of column
+  const pctMatch = str.match(/^([+-]?\d+(?:\.\d+)?)%$/);
+  if (pctMatch) {
+    const num = parseFloat(pctMatch[1]);
+    const display = (num % 1 !== 0 ? num.toFixed(1) : String(Math.trunc(num))) + '%';
+    return { display, numVal: num, isPercent: true };
+  }
+  // Pure number / float (JS number type or string that is entirely numeric)
+  if (typeof val === 'number' || /^[+-]?\d+(?:\.\d+)?$/.test(str)) {
+    const num = typeof val === 'number' ? val : parseFloat(str);
+    if (!isNaN(num)) {
+      const display = num % 1 !== 0 ? num.toFixed(1) : String(Math.trunc(num));
+      // If the column is flagged as percentage, treat this numeric value as percent
+      return { display, numVal: num, isPercent: isPercentCol };
+    }
+  }
+  return null;
 }
 
 // ── Main component ─────────────────────────────────────────────────────────────
@@ -292,13 +327,18 @@ export function DynamicTable({
             <View key={index} style={[styles.cardItem, { backgroundColor: index % 2 === 0 ? c.surface : c.background, borderColor: c.border }]}>
               {expandedCols.map(col => {
                 const val = item[col.field];
-                const display = val !== null && val !== undefined ? String(val) : '—';
-                const color = col.colorFn ? (col.colorFn(val, item) ?? c.text) : c.text;
+                const cell = parseCellValue(val, col.isPercentage);
+                const display = cell ? cell.display : (val !== null && val !== undefined ? String(val) : '\u2014');
+                let color = col.colorFn ? (col.colorFn(val, item) ?? c.text) : c.text;
+                if (!col.colorFn && cell?.isPercent) {
+                  color = cell.numVal > 0 ? '#22c55e' : cell.numVal < 0 ? '#ef4444' : c.text;
+                }
+                const textAlign = cell ? ('right' as const) : ('left' as const);
                 return (
                   <View key={col.field} style={styles.cardRow}>
                     <Text style={[styles.cardLabel, { color: c.textSecondary }]}>{col.header}</Text>
-                    <View style={styles.cardValueRow}>
-                      <Text style={[styles.cardValue, { color }]}>{display}</Text>
+                    <View style={[styles.cardValueRow, cell ? { justifyContent: 'flex-end' } : {}]}>
+                      <Text style={[styles.cardValue, { color, textAlign }]}>{display}</Text>
                       {col.copyEnabled && (
                         <TouchableOpacity
                           hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
@@ -375,11 +415,16 @@ export function DynamicTable({
                 >
                   {expandedCols.map(col => {
                     const val = item[col.field];
-                    const display = val !== null && val !== undefined ? String(val) : '—';
-                    const color = col.colorFn ? (col.colorFn(val, item) ?? c.text) : c.text;
+                    const cell = parseCellValue(val, col.isPercentage);
+                    const display = cell ? cell.display : (val !== null && val !== undefined ? String(val) : '\u2014');
+                    let color = col.colorFn ? (col.colorFn(val, item) ?? c.text) : c.text;
+                    if (!col.colorFn && cell?.isPercent) {
+                      color = cell.numVal > 0 ? '#22c55e' : cell.numVal < 0 ? '#ef4444' : c.text;
+                    }
+                    const textAlign = cell ? ('right' as const) : ('left' as const);
                     return (
                       <View key={col.field} style={[styles.cell, { width: col.width ?? DEFAULT_COL_WIDTH }]}>
-                        <Text style={[styles.cellText, { color, flex: col.copyEnabled ? 1 : undefined }]} numberOfLines={2}>
+                        <Text style={[styles.cellText, { color, flex: col.copyEnabled ? 1 : undefined, textAlign }]} numberOfLines={2}>
                           {display}
                         </Text>
                         {col.copyEnabled && (

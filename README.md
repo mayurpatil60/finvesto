@@ -275,3 +275,53 @@ npx eas build -p ios
 ```
 
 > Install EAS CLI first: `npm install -g eas-cli` then `eas login`
+
+---
+
+## 📊 DynamicTable Component
+
+`src/components/dynamic-table/`
+
+A full-featured React Native table with auto-generated columns, sorting, filtering, pagination, CSV export and smart cell formatting.
+
+### Cell formatting rules
+
+| Cell value                                 | Alignment | Color       | Example                        |
+| ------------------------------------------ | --------- | ----------- | ------------------------------ |
+| Pure number / float                        | Right     | None        | `1234`, `12.5`                 |
+| Number with `%` suffix                     | Right     | Green / Red | `"12.5%"`, `"-3%"`             |
+| Percentage column (by name) + plain number | Right     | Green / Red | column `gain_per`, value `4.2` |
+| Everything else                            | Left      | None        | `"360ONE 840 PE"`, `"NIFTY"`   |
+
+- Floats are rounded to **1 decimal place**; integers show **no decimal** (e.g. `4.0` → `4`)
+- Negative values → **red** (`#ef4444`), positive → **green** (`#22c55e`), zero → default
+
+### Percentage column naming convention
+
+Columns are **automatically detected as percentage columns** when the field name ends with one of these suffixes (case-insensitive):
+
+| Suffix        | Example field name                     |
+| ------------- | -------------------------------------- |
+| `_per`        | `gain_per`, `change_per`               |
+| `_percentage` | `return_percentage`                    |
+| `%`           | `profit%`                              |
+| trailing `P`  | `day_changeP`, `underline_day_changeP` |
+
+You can also explicitly set `isPercentage: true` in any `DynamicColumn` schema entry.
+
+### Usage
+
+```tsx
+// Auto-schema from data
+<DynamicTable data={rows} />
+
+// Custom schema with explicit percentage flag
+<DynamicTable
+  data={rows}
+  schema={[
+    { field: 'symbol', header: 'Symbol' },
+    { field: 'gain_per', header: 'Gain %', isPercentage: true },
+    { field: 'price', header: 'Price' },
+  ]}
+/>
+```
