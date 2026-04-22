@@ -193,10 +193,10 @@ export function OptionSelection() {
         </Text>
         {/* Row 1: Symbols + Expiry */}
         <View style={styles.inputsRow}>
-          <View style={styles.labeledItem}>
+          <View style={[styles.labeledItem, { flex: 1 }]}>
             <Text style={[styles.itemLabel, { color: c.textSecondary }]}>Symbols</Text>
             <TextInput
-              style={[styles.input, { color: c.text, borderColor: c.border, backgroundColor: c.background, flex: 1 }]}
+              style={[styles.input, { color: c.text, borderColor: c.border, backgroundColor: c.background }]}
               value={symbols}
               onChangeText={setSymbols}
               placeholder="Symbols (e.g. NIFTY)"
@@ -204,10 +204,10 @@ export function OptionSelection() {
               autoCapitalize="characters"
             />
           </View>
-          <View style={styles.labeledItem}>
+          <View style={[styles.labeledItem, { flex: 1 }]}>
             <Text style={[styles.itemLabel, { color: c.textSecondary }]}>Expiry</Text>
             <TextInput
-              style={[styles.input, { color: c.text, borderColor: c.border, backgroundColor: c.background, flex: 1 }]}
+              style={[styles.input, { color: c.text, borderColor: c.border, backgroundColor: c.background }]}
               value={expiry}
               onChangeText={setExpiry}
               placeholder="Expiry (YYYY-MM-DD)"
@@ -216,10 +216,10 @@ export function OptionSelection() {
             />
           </View>
         </View>
-        {/* Row 2: Load, Mode toggle, Level/Amount selector, Reset */}
+        {/* Row 2: Load + Mode + Level/Amount + Reset (wraps on mobile) */}
         <View style={styles.actionsRow}>
           <View style={styles.labeledItem}>
-            <Text style={[styles.itemLabel, { color: c.textSecondary }]}> </Text>
+            <Text style={styles.itemLabel}> </Text>
             <TouchableOpacity
               style={[styles.btn, { backgroundColor: c.primary, opacity: (loading || !symbols.trim() || !expiry.trim()) ? 0.4 : 1 }]}
               onPress={loadOptions}
@@ -282,11 +282,11 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   content: { paddingTop: SPACING.md, paddingBottom: SPACING.xl },
   formNote: { fontSize: 12, lineHeight: 18 },
-  inputsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: SPACING.sm, alignItems: 'flex-end' },
-  input: { borderWidth: 1, borderRadius: 8, paddingHorizontal: SPACING.md, paddingVertical: 6, fontSize: 13, minWidth: 140 },
-  actionsRow: { flexDirection: 'row', gap: SPACING.sm, alignItems: 'flex-end', justifyContent: 'flex-end' },
-  labeledItem: { flexDirection: 'column', gap: 4 },
-  itemLabel: { fontSize: 11 },
+  inputsRow: { flexDirection: 'row', gap: SPACING.sm, alignItems: 'flex-end' },
+  input: { borderWidth: 1, borderRadius: 8, paddingHorizontal: SPACING.md, paddingVertical: 6, fontSize: 13, height: 34 },
+  actionsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: SPACING.sm, alignItems: 'flex-end', marginTop: SPACING.sm },
+  labeledItem: { flexDirection: 'column' },
+  itemLabel: { fontSize: 11, fontWeight: '600', letterSpacing: 0.5, marginBottom: 5 },
   btn: { borderRadius: 8, paddingHorizontal: SPACING.md, paddingVertical: 6, alignItems: 'center', justifyContent: 'center', minWidth: 60 },
   btnIcon: { width: 32, height: 32, borderRadius: 8, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
   btnText: { color: '#fff', fontWeight: '600', fontSize: 13 },
