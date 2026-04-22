@@ -8,9 +8,10 @@ import { useTheme } from '../../components/theme/ThemeProvider';
 import { SPACING } from '../../types/constants';
 import { OptionSelection } from './components/OptionSelection';
 import { OptionRange } from './components/OptionRange';
+import { OptionJourney } from './components/OptionJourney';
 import { OptionTrack } from './components/OptionTrack';
-type OptionsTab = 'Track' | 'Range' | 'Selection';
-const TABS: OptionsTab[] = ['Track', 'Range', 'Selection'];
+type OptionsTab = 'Track' | 'Range' | 'Journey' | 'Selection';
+const TABS: OptionsTab[] = ['Track', 'Range', 'Journey', 'Selection'];
 
 export function OptionsScreen() {
   const { theme } = useTheme();
@@ -52,6 +53,7 @@ export function OptionsScreen() {
       <View style={styles.content} {...swipePanResponder.panHandlers}>
         {activeTab === 'Track' && <OptionTrack />}
         {activeTab === 'Range' && <OptionRange />}
+        {activeTab === 'Journey' && <OptionJourney />}
         {activeTab === 'Selection' && <OptionSelection />}
       </View>
     </SafeAreaView>
