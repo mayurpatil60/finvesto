@@ -37,8 +37,13 @@ const SCHEMA: DynamicColumn[] = [
   { field: 'amount',          header: 'Amount',    width: 80,  type: 'number', sortable: true },
 ];
 
+type SelectionMode = 'index' | 'amount';
+
 const LEVELS = Array.from({ length: 30 }, (_, i) => i + 1);
 const LEVEL_OPTIONS = LEVELS.map(l => ({ label: String(l), value: l }));
+
+const AMOUNTS = Array.from({ length: 15 }, (_, i) => (i + 1) * 1000);
+const AMOUNT_OPTIONS = AMOUNTS.map(a => ({ label: `${a / 1000}k`, value: a }));
 
 export function OptionSelection() {
   const { theme } = useTheme();
@@ -47,15 +52,29 @@ export function OptionSelection() {
   const [symbols, setSymbols] = useState('');
   const [expiry, setExpiry] = useState('');
   const [level, setLevel] = useState(1);
+  const [selectionMode, setSelectionMode] = useState<SelectionMode>('index');
+  const [amountTarget, setAmountTarget] = useState(1000);
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<any[]>([]);
   const [refreshing, setRefreshing] = useState(false);
+  const [rawTable, setRawTable] = useState<any[]>([]);
+  const [rawBasePrice, setRawBasePrice] = useState(0);
 
   const onRefresh = useCallback(() => {
     if (!data.length) { setRefreshing(false); return; }
     setRefreshing(true);
     loadOptions().finally(() => setRefreshing(false));
-  }, [symbols, expiry, level, data]);
+  }, [symbols, expiry, level, selectionMode, amountTarget, data]);
+
+  // Re-filter from cached data when mode/level/amount changes
+  useEffect(() => {
+    if (!rawTable.length) return;
+    if (selectionMode === 'amount') {
+      setData(pickByAmount(rawTable, amountTarget, symbols.trim()));
+    } else {
+      setData(pickByLevel(rawTable, rawBasePrice, level, symbols.trim()));
+    }
+  }, [selectionMode, level, amountTarget]);
 
   useEffect(() => {
     optionChainService.getExpiry().then(r => {
@@ -80,12 +99,43 @@ export function OptionSelection() {
         return;
       }
 
-      setData(pickByLevel(table, basePrice, level, symbols.trim()));
+      setRawTable(table);
+      setRawBasePrice(basePrice);
+
+      if (selectionMode === 'amount') {
+        setData(pickByAmount(table, amountTarget, symbols.trim()));
+      } else {
+        setData(pickByLevel(table, basePrice, level, symbols.trim()));
+      }
     } catch (e: any) {
       Alert.alert('Error', e.message);
     } finally {
       setLoading(false);
     }
+  }
+
+  function pickByAmount(table: any[], target: number, ticker: string): any[] {
+    const calls: any[] = [];
+    const puts: any[] = [];
+
+    table.forEach(row => {
+      if (row?.c && (row.c.current_price ?? 0) > 0) calls.push(row.c);
+      if (row?.p && (row.p.current_price ?? 0) > 0) puts.push(row.p);
+    });
+
+    const nearest = (arr: any[]) =>
+      arr.reduce((best, opt) => {
+        const amt = (opt.current_price ?? 0) * (opt.lot_size ?? 1);
+        const bestAmt = (best?.current_price ?? 0) * (best?.lot_size ?? 1);
+        return Math.abs(amt - target) < Math.abs(bestAmt - target) ? opt : best;
+      }, null);
+
+    const results: any[] = [];
+    const bestCall = nearest(calls);
+    const bestPut = nearest(puts);
+    if (bestCall) results.push(normalizeOption(bestCall, ticker));
+    if (bestPut) results.push(normalizeOption(bestPut, ticker));
+    return results;
   }
 
   function pickByLevel(table: any[], basePrice: number, lvl: number, ticker: string): any[] {
@@ -143,45 +193,73 @@ export function OptionSelection() {
         </Text>
         {/* Row 1: Symbols + Expiry */}
         <View style={styles.inputsRow}>
-          <TextInput
-            style={[styles.input, { color: c.text, borderColor: c.border, backgroundColor: c.background, flex: 1 }]}
-            value={symbols}
-            onChangeText={setSymbols}
-            placeholder="Symbols (e.g. NIFTY)"
-            placeholderTextColor={c.textSecondary}
-            autoCapitalize="characters"
-          />
-          <TextInput
-            style={[styles.input, { color: c.text, borderColor: c.border, backgroundColor: c.background, flex: 1 }]}
-            value={expiry}
-            onChangeText={setExpiry}
-            placeholder="Expiry (YYYY-MM-DD)"
-            placeholderTextColor={c.textSecondary}
-            autoCapitalize="none"
-          />
+          <View style={styles.labeledItem}>
+            <Text style={[styles.itemLabel, { color: c.textSecondary }]}>Symbols</Text>
+            <TextInput
+              style={[styles.input, { color: c.text, borderColor: c.border, backgroundColor: c.background, flex: 1 }]}
+              value={symbols}
+              onChangeText={setSymbols}
+              placeholder="Symbols (e.g. NIFTY)"
+              placeholderTextColor={c.textSecondary}
+              autoCapitalize="characters"
+            />
+          </View>
+          <View style={styles.labeledItem}>
+            <Text style={[styles.itemLabel, { color: c.textSecondary }]}>Expiry</Text>
+            <TextInput
+              style={[styles.input, { color: c.text, borderColor: c.border, backgroundColor: c.background, flex: 1 }]}
+              value={expiry}
+              onChangeText={setExpiry}
+              placeholder="Expiry (YYYY-MM-DD)"
+              placeholderTextColor={c.textSecondary}
+              autoCapitalize="none"
+            />
+          </View>
         </View>
-        {/* Row 2: Level selector + right-aligned Load + Reset */}
+        {/* Row 2: Load, Mode toggle, Level/Amount selector, Reset */}
         <View style={styles.actionsRow}>
+          <View style={styles.labeledItem}>
+            <Text style={[styles.itemLabel, { color: c.textSecondary }]}> </Text>
+            <TouchableOpacity
+              style={[styles.btn, { backgroundColor: c.primary, opacity: (loading || !symbols.trim() || !expiry.trim()) ? 0.4 : 1 }]}
+              onPress={loadOptions}
+              disabled={loading || !symbols.trim() || !expiry.trim()}
+            >
+              {loading
+                ? <ActivityIndicator color="#fff" size="small" />
+                : <Text style={styles.btnText}>Load Options</Text>
+              }
+            </TouchableOpacity>
+          </View>
+
+          {/* Mode select */}
           <SelectInput
-            label="Level"
-            options={LEVEL_OPTIONS}
-            value={level}
-            onChange={setLevel}
+            label="Mode"
+            options={[{ label: 'Index', value: 'index' }, { label: 'Amount', value: 'amount' }]}
+            value={selectionMode}
+            onChange={(v) => setSelectionMode(v as SelectionMode)}
           />
-          <TouchableOpacity
-            style={[styles.btn, { backgroundColor: c.primary, opacity: loading ? 0.7 : 1 }]}
-            onPress={loadOptions}
-            disabled={loading}
-          >
-            {loading
-              ? <ActivityIndicator color="#fff" size="small" />
-              : <Text style={styles.btnText}>Load Options</Text>
-            }
-          </TouchableOpacity>
+
+          {selectionMode === 'index' ? (
+            <SelectInput
+              label="Level"
+              options={LEVEL_OPTIONS}
+              value={level}
+              onChange={setLevel}
+            />
+          ) : (
+            <SelectInput
+              label="Amount"
+              options={AMOUNT_OPTIONS}
+              value={amountTarget}
+              onChange={setAmountTarget}
+            />
+          )}
+
           {data.length > 0 && (
             <TouchableOpacity
               style={[styles.btnIcon, { borderColor: c.border, backgroundColor: c.surface }]}
-              onPress={() => setData([])}
+              onPress={() => { setData([]); setRawTable([]); setRawBasePrice(0); }}
             >
               <Text style={{ color: c.text, fontSize: 15 }}>✕</Text>
             </TouchableOpacity>
@@ -204,9 +282,11 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   content: { paddingTop: SPACING.md, paddingBottom: SPACING.xl },
   formNote: { fontSize: 12, lineHeight: 18 },
-  inputsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: SPACING.sm },
+  inputsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: SPACING.sm, alignItems: 'flex-end' },
   input: { borderWidth: 1, borderRadius: 8, paddingHorizontal: SPACING.md, paddingVertical: 6, fontSize: 13, minWidth: 140 },
-  actionsRow: { flexDirection: 'row', gap: SPACING.sm, alignItems: 'center', justifyContent: 'flex-end' },
+  actionsRow: { flexDirection: 'row', gap: SPACING.sm, alignItems: 'flex-end', justifyContent: 'flex-end' },
+  labeledItem: { flexDirection: 'column', gap: 4 },
+  itemLabel: { fontSize: 11 },
   btn: { borderRadius: 8, paddingHorizontal: SPACING.md, paddingVertical: 6, alignItems: 'center', justifyContent: 'center', minWidth: 60 },
   btnIcon: { width: 32, height: 32, borderRadius: 8, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
   btnText: { color: '#fff', fontWeight: '600', fontSize: 13 },
