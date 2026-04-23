@@ -113,6 +113,9 @@ finvesto/
 │   │   ├── home/                    # Home tab (dashboard)
 │   │   ├── analysis/                # Analysis tab
 │   │   ├── markets/                 # Markets tab
+│   │   ├── options/                 # Options tab (Track, Track Week, Range, Journey, Selection)
+│   │   │   ├── components/          # OptionTrack, OptionTrackWeek, OptionRange, OptionJourney, OptionSelection
+│   │   │   └── services/            # option-track, option-track-week, option-range, option-journey, option-chain
 │   │   ├── tools/                   # Tools tab
 │   │   └── settings/                # Settings tab (dark/light mode toggle)
 │   ├── components/
