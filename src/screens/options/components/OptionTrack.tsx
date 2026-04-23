@@ -26,6 +26,11 @@ const INDEX_OPTIONS = [
   { label: '1 (₹3k)', value: '1' },
 ];
 
+const TAG_OPTIONS = [
+  { label: 'All', value: '' },
+  { label: 'Buy', value: 'Buy' },
+];
+
 /** Index 0 → amount_target 1000, Index 1 → amount_target 3000 */
 function pickByIndex(data: any[], index: number): any[] {
   const target = index === 0 ? 1000 : 3000;
@@ -46,6 +51,7 @@ const SCHEMA: DynamicColumn[] = [
   { field: 'day_changeP',    header: 'Day %',     width: 70,  type: 'number', sortable: true, colorFn: pctColor },
   { field: 'volume',         header: 'Volume',    width: 80,  type: 'number', sortable: true },
   { field: 'amount',         header: 'Amount',    width: 85,  type: 'number', sortable: true },
+  { field: 'tag',            header: 'Tag',       width: 65,  type: 'text',   sortable: true },
 ];
 
 /** Strip filter-only fields before passing to table */
@@ -60,6 +66,7 @@ export function OptionTrack() {
   const [batches, setBatches] = useState<string[]>([]);
   const [selectedBatch, setSelectedBatch] = useState('');
   const [selectedIndex, setSelectedIndex] = useState('0');
+  const [selectedTag, setSelectedTag] = useState('');
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<any[]>([]);
   const [rawBatchData, setRawBatchData] = useState<any[]>([]);
@@ -104,9 +111,10 @@ export function OptionTrack() {
         volume: o.volume,
         amount: o.amount,
         amount_target: o.amount_target, // for filtering only
+        tag: o.tag ?? '',
       }));
       setRawBatchData(raw);
-      setData(toDisplayData(pickByIndex(raw, parseInt(selectedIndex, 10))));
+      setData(toDisplayData(applyFilters(pickByIndex(raw, parseInt(selectedIndex, 10)), selectedTag)));
     } catch (e: any) {
       Alert.alert('Error', e.message ?? 'Failed to load batch');
     } finally {
@@ -114,10 +122,22 @@ export function OptionTrack() {
     }
   }
 
+  function applyFilters(items: any[], tag: string): any[] {
+    if (!tag) return items;
+    return items.filter((o) => o.tag === tag);
+  }
+
   function applyIndex(newIndex: string) {
     setSelectedIndex(newIndex);
     if (rawBatchData.length) {
-      setData(toDisplayData(pickByIndex(rawBatchData, parseInt(newIndex, 10))));
+      setData(toDisplayData(applyFilters(pickByIndex(rawBatchData, parseInt(newIndex, 10)), selectedTag)));
+    }
+  }
+
+  function applyTagFilter(newTag: string) {
+    setSelectedTag(newTag);
+    if (rawBatchData.length) {
+      setData(toDisplayData(applyFilters(pickByIndex(rawBatchData, parseInt(selectedIndex, 10)), newTag)));
     }
   }
 
@@ -174,8 +194,7 @@ export function OptionTrack() {
     >
       <CollapsibleCard title="Option Track">
         <Text style={[styles.subtitle, { color: c.textSecondary }]}>
-          Options nearest to ₹1,000 and ₹3,000 lot-amount — 2 CE + 2 PE per ticker,
-          filtered by ToBuy → CE / ToSell → PE.
+          Options nearest to ₹1,000 and ₹3,000 lot-amount — 2 CE + 2 PE per ticker.
         </Text>
 
         {/* Batch selector */}
@@ -226,9 +245,19 @@ export function OptionTrack() {
           )}
 
           {data.length > 0 && (
+            <SelectInput
+              label=""
+              options={TAG_OPTIONS}
+              value={selectedTag}
+              onChange={applyTagFilter}
+              style={{ width: 90 }}
+            />
+          )}
+
+          {data.length > 0 && (
             <TouchableOpacity
               style={[styles.btnIcon, { borderColor: c.border, backgroundColor: c.surface }]}
-              onPress={() => { setData([]); setRawBatchData([]); }}
+              onPress={() => { setData([]); setRawBatchData([]); setSelectedTag(''); }}
             >
               <Text style={{ color: c.text, fontSize: 15 }}>✕</Text>
             </TouchableOpacity>

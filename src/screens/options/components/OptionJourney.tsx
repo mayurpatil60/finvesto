@@ -30,8 +30,6 @@ function pctColor(val: any): string | undefined {
 const SCHEMA: DynamicColumn[] = [
   { field: 'ticker',           header: 'Ticker',     width: 80,  type: 'text',   sortable: true, copyEnabled: true, copyPrefix: 'NSE:' },
   { field: 'underline_ltp',    header: 'Stock LTP',  width: 90,  type: 'number', sortable: true },
-  { field: 'change_per_month', header: 'Month %',    width: 80,  type: 'number', sortable: true, colorFn: pctColor },
-  { field: 'rsi',              header: 'RSI',        width: 55,  type: 'number', sortable: true },
   { field: 'mappDisplayName',  header: 'Name',       width: 160, type: 'text',   sortable: true, filterable: true, copyEnabled: true, copyPrefix: '' },
   { field: 'current_price',    header: 'Price',      width: 80,  type: 'number', sortable: true },
   { field: 'day_changeP',      header: 'Day %',      width: 70,  type: 'number', sortable: true, colorFn: pctColor },
@@ -83,8 +81,6 @@ export function OptionJourney() {
       setData((res.data ?? []).map((o: any) => ({
         ticker: o.ticker,
         underline_ltp: o.underline_ltp,
-        change_per_month: o.change_per_month,
-        rsi: o.rsi,
         mappDisplayName: o.mappDisplayName,
         current_price: o.current_price,
         day_changeP: o.day_changeP,

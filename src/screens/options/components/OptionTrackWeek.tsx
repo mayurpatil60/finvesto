@@ -22,6 +22,11 @@ import { SelectInput } from '../../../components/common/SelectInput';
 import { Ionicons } from '@expo/vector-icons';
 import { optionTrackWeekService } from '../services/option-track-week.service';
 
+const TAG_OPTIONS = [
+  { label: 'All', value: '' },
+  { label: 'Buy', value: 'Buy' },
+];
+
 function pctColor(val: any): string | undefined {
   const n = parseFloat(String(val ?? ''));
   if (isNaN(n)) return undefined;
@@ -38,6 +43,7 @@ const SCHEMA: DynamicColumn[] = [
   { field: 'change_per_week', header: 'Chg Wk %', width: 85,  type: 'number', sortable: true, colorFn: pctColor },
   { field: 'volume',          header: 'Volume',    width: 80,  type: 'number', sortable: true },
   { field: 'amount',          header: 'Amount',    width: 85,  type: 'number', sortable: true },
+  { field: 'tag',             header: 'Tag',       width: 65,  type: 'text',   sortable: true },
 ];
 
 export function OptionTrackWeek() {
@@ -48,6 +54,8 @@ export function OptionTrackWeek() {
   const [selectedBatch, setSelectedBatch] = useState('');
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<any[]>([]);
+  const [rawBatchData, setRawBatchData] = useState<any[]>([]);
+  const [selectedTag, setSelectedTag] = useState('');
   const [refreshing, setRefreshing] = useState(false);
   const [expiryDate, setExpiryDate] = useState('');
   const scrollRef = useRef<ScrollView>(null);
@@ -81,7 +89,7 @@ export function OptionTrackWeek() {
     if (!silent) setLoading(true);
     try {
       const res = await optionTrackWeekService.getBatch(batchId);
-      const rows = (res.data ?? []).map((o: any) => ({
+      const raw = (res.data ?? []).map((o: any) => ({
         ticker: o.ticker,
         underline_ltp: o.underline_ltp,
         mappDisplayName: o.mappDisplayName,
@@ -91,12 +99,26 @@ export function OptionTrackWeek() {
         change_per_week: o.change_per_week,
         volume: o.volume,
         amount: o.amount,
+        tag: o.tag ?? '',
       }));
-      setData(rows);
+      setRawBatchData(raw);
+      setData(applyTagFilter(raw, selectedTag));
     } catch (e: any) {
       Alert.alert('Error', e.message ?? 'Failed to load batch');
     } finally {
       if (!silent) setLoading(false);
+    }
+  }
+
+  function applyTagFilter(items: any[], tag: string): any[] {
+    if (!tag) return items;
+    return items.filter((o) => o.tag === tag);
+  }
+
+  function onTagChange(newTag: string) {
+    setSelectedTag(newTag);
+    if (rawBatchData.length) {
+      setData(applyTagFilter(rawBatchData, newTag));
     }
   }
 
@@ -133,6 +155,8 @@ export function OptionTrackWeek() {
               Alert.alert('Deleted', `${res.deletedCount} records removed`);
               setSelectedBatch('');
               setData([]);
+              setRawBatchData([]);
+              setSelectedTag('');
               loadBatchIds();
             } catch (e: any) {
               Alert.alert('Error', e.message ?? 'Failed to delete batch');
@@ -211,9 +235,19 @@ export function OptionTrackWeek() {
           </TouchableOpacity>
 
           {data.length > 0 && (
+            <SelectInput
+              label=""
+              options={TAG_OPTIONS}
+              value={selectedTag}
+              onChange={onTagChange}
+              style={{ width: 90 }}
+            />
+          )}
+
+          {data.length > 0 && (
             <TouchableOpacity
               style={[styles.btnIcon, { borderColor: c.border, backgroundColor: c.surface }]}
-              onPress={() => setData([])}
+              onPress={() => { setData([]); setRawBatchData([]); setSelectedTag(''); }}
             >
               <Text style={{ color: c.text, fontSize: 15 }}>✕</Text>
             </TouchableOpacity>
