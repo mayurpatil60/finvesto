@@ -7,7 +7,6 @@
 import React, { createContext, useContext, useEffect, useRef, useState } from "react";
 import * as Notifications from "expo-notifications";
 import { pushNotificationService } from "../../services/PushNotificationService";
-import { deviceTokenService } from "../../services/DeviceTokenService";
 import type { INotificationPayload } from "../../types/interfaces";
 
 // ─── Context ─────────────────────────────────────────────────────────────────
@@ -52,8 +51,6 @@ export function PushNotificationHandler({
       if (token) {
         setExpoPushToken(token);
         onTokenReceived?.(token);
-        // Register token with backend (fire-and-forget)
-        deviceTokenService.register(token);
       }
     });
 

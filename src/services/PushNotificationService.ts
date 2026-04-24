@@ -2,7 +2,6 @@
 
 import * as Notifications from "expo-notifications";
 import * as Device from "expo-device";
-import Constants from "expo-constants";
 import { Platform } from "react-native";
 import type {
   INotificationPayload,
@@ -49,18 +48,7 @@ class PushNotificationService implements IPushNotificationService {
       return null;
     }
 
-    const projectId =
-      Constants.expoConfig?.extra?.eas?.projectId ??
-      Constants.easConfig?.projectId;
-
-    if (!projectId) {
-      console.warn(
-        "PushNotificationService: EAS projectId not found in app config.",
-      );
-      return null;
-    }
-
-    const tokenData = await Notifications.getExpoPushTokenAsync({ projectId });
+    const tokenData = await Notifications.getExpoPushTokenAsync();
     return tokenData.data;
   }
 
