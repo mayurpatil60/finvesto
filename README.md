@@ -71,6 +71,7 @@ finvesto/
     │   ├── options/                 # Options tab
     │   │   ├── components/          # OptionTrack, OptionTrackWeek, OptionRange, OptionJourney, OptionSearch, OptionSelection
     │   │   └── services/            # Per-feature API services
+    │   ├── notifications/           # Notifications tab — push notification history
     │   ├── tools/                   # Tools tab
     │   └── settings/                # Settings tab (theme toggle)
     ├── components/
@@ -80,13 +81,15 @@ finvesto/
     │   └── theme/                   # ThemeProvider (context + useTheme hook)
     ├── navigation/
     │   ├── AppNavigator.tsx         # Root navigator
-    │   ├── BottomTabNavigator.tsx   # 5-tab bottom bar
+    │   ├── BottomTabNavigator.tsx   # 5-tab bottom bar (Options, Markets, Tools, Notifications, Settings)
     │   └── SettingsNavigator.tsx    # Settings stack navigator
     ├── services/
     │   ├── BaseService.ts           # Abstract HTTP base
     │   ├── FinvestoService.ts       # Main API service
     │   ├── UserService.ts
-    │   └── PushNotificationService.ts  # Singleton — register, send, cancel notifications
+    │   ├── PushNotificationService.ts  # Singleton — register, send, cancel notifications
+    │   ├── DeviceTokenService.ts    # Registers Expo push token with backend on launch
+    │   └── NotificationLogService.ts   # Fetches notification history from backend
     ├── hooks/
     │   └── useAppUpdater.ts         # Auto OTA update check on app launch
     ├── types/                       # All TypeScript definitions
@@ -108,6 +111,16 @@ Dark mode by default. Toggle in the Settings tab. All colors come from `DARK_THE
 ## Push Notifications
 
 Wrap root with `<PushNotificationHandler>` (already done in `App.tsx`). Use `usePushNotification()` hook anywhere to send/cancel notifications. Service: `pushNotificationService` singleton in `src/services/PushNotificationService.ts`.
+
+### Server-sent Notifications
+
+The app automatically registers the Expo push token with the backend on every launch via `DeviceTokenService`. When the cron job runs the option-track pipeline and finds options tagged `Buy`, the backend sends a push notification to all registered devices — even when the app is closed.
+
+| Service                  | Purpose                                                         |
+| ------------------------ | --------------------------------------------------------------- |
+| `DeviceTokenService`     | Registers Expo push token with backend (`POST /api/push-token`) |
+| `NotificationLogService` | Fetches notification history from `GET /api/notifications`      |
+| `NotificationsScreen`    | Shows push notification history (Notifications tab)             |
 
 ## DynamicTable Component
 
