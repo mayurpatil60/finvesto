@@ -7,12 +7,10 @@ import { AppHeader } from '../../components/layout/AppHeader';
 import { useTheme } from '../../components/theme/ThemeProvider';
 import { SPACING } from '../../types/constants';
 import { OptionSelection } from './components/OptionSelection';
-import { OptionRange } from './components/OptionRange';
 import { OptionJourney } from './components/OptionJourney';
 import { OptionTrack } from './components/OptionTrack';
-import { OptionTrackWeek } from './components/OptionTrackWeek';
-type OptionsTab = 'Track' | 'Track Week' | 'Range' | 'Journey' | 'Selection';
-const TABS: OptionsTab[] = ['Track', 'Track Week', 'Range', 'Journey', 'Selection'];
+type OptionsTab = 'Track' | 'Journey' | 'Selection';
+const TABS: OptionsTab[] = ['Track', 'Journey', 'Selection'];
 
 export function OptionsScreen() {
   const { theme } = useTheme();
@@ -53,8 +51,6 @@ export function OptionsScreen() {
 
       <View style={styles.content} {...swipePanResponder.panHandlers}>
         {activeTab === 'Track' && <OptionTrack />}
-        {activeTab === 'Track Week' && <OptionTrackWeek />}
-        {activeTab === 'Range' && <OptionRange />}
         {activeTab === 'Journey' && <OptionJourney />}
         {activeTab === 'Selection' && <OptionSelection />}
       </View>

@@ -69,7 +69,7 @@ finvesto/
     │   ├── auth/                    # Auth screens (login/register)
     │   ├── markets/                 # Markets tab — Fundamentals, Investments, IPO
     │   ├── options/                 # Options tab
-    │   │   ├── components/          # OptionTrack, OptionTrackWeek, OptionRange, OptionJourney, OptionSearch, OptionSelection
+    │   │   ├── components/          # OptionTrack (Default/Weekly), OptionJourney (Default/Monthly), OptionSearch, OptionSelection
     │   │   └── services/            # Per-feature API services
     │   ├── notifications/           # Notifications tab — push notification history
     │   ├── tools/                   # Tools tab
