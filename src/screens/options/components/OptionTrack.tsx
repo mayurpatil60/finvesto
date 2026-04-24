@@ -269,8 +269,8 @@ export function OptionTrack() {
             : 'Options nearest to ₹1,000 and ₹3,000 lot-amount — 2 CE + 2 PE per ticker.'}
         </Text>
 
-        {/* Type selector */}
-        <View style={styles.inputsRow}>
+        {/* Type selector + fetch button row */}
+        <View style={styles.actionsRow}>
           <SelectInput
             label="Type"
             value={trackType}
@@ -278,6 +278,14 @@ export function OptionTrack() {
             onChange={onTypeChange}
             style={{ width: 120 }}
           />
+
+          <TouchableOpacity
+            style={[styles.iconBtn, { backgroundColor: '#16a34a' }]}
+            onPress={fetchFresh}
+            disabled={loading}
+          >
+            <Text style={styles.iconBtnText}>☁</Text>
+          </TouchableOpacity>
         </View>
 
         {/* Expiry date input (weekly only) */}
@@ -308,23 +316,15 @@ export function OptionTrack() {
           />
         </View>
 
-        {/* Action buttons */}
+        {/* Load + filters row */}
         <View style={styles.actionsRow}>
-          <TouchableOpacity
-            style={[styles.iconBtn, { backgroundColor: '#16a34a' }]}
-            onPress={fetchFresh}
-            disabled={loading}
-          >
-            <Text style={styles.iconBtnText}>☁</Text>
-          </TouchableOpacity>
-
           <TouchableOpacity
             style={[
               styles.btn,
-              { backgroundColor: c.primary, opacity: loading || !selectedBatch ? 0.7 : 1 },
+              { backgroundColor: c.primary, opacity: loading || !selectedBatch || (isWeekly && !expiryDate.trim()) ? 0.7 : 1 },
             ]}
             onPress={() => loadBatch()}
-            disabled={loading || !selectedBatch}
+            disabled={loading || !selectedBatch || (isWeekly && !expiryDate.trim())}
           >
             {loading ? (
               <ActivityIndicator color="#fff" size="small" />
