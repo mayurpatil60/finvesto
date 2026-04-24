@@ -69,7 +69,7 @@ finvesto/
     │   ├── auth/                    # Auth screens (login/register)
     │   ├── markets/                 # Markets tab — Fundamentals, Investments, IPO
     │   ├── options/                 # Options tab
-    │   │   ├── components/          # OptionTrack (Default/Weekly), OptionJourney (Default/Monthly), OptionSearch, OptionSelection
+    │   ├── components/          # OptionTrack (Default/Weekly), OptionJourney (Default/Monthly), OptionSelection, OptionSentiment
     │   │   └── services/            # Per-feature API services
     │   ├── tools/                   # Tools tab
     │   └── settings/                # Settings tab (theme toggle)
@@ -104,6 +104,16 @@ finvesto/
 ## Theme
 
 Dark mode by default. Toggle in the Settings tab. All colors come from `DARK_THEME` / `LIGHT_THEME` in `src/types/constants/theme.ts`. Use `useTheme()` hook in any component.
+
+## Key Dependencies
+
+| Package                        | Purpose                             |
+| ------------------------------ | ----------------------------------- |
+| `expo`                         | React Native framework              |
+| `react-native-gifted-charts`   | Bar chart for Option Sentiment      |
+| `react-native-linear-gradient` | Required peer dep for gifted-charts |
+| `@react-navigation/*`          | Tab and stack navigation            |
+| `@expo/vector-icons`           | Ionicons icon set                   |
 
 ## Push Notifications
 

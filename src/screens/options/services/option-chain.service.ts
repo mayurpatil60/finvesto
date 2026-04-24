@@ -1,6 +1,7 @@
 // ─── Option Chain Service ──────────────────────────────────────────────────────
 
-const BASE_URL = "https://finvesto-backend-y9ly.onrender.com";
+import { environment } from "../../../environments/environment";
+const BASE_URL = environment.ENDPOINTS.NODE.BASE_URL;
 
 export class OptionChainService {
   private static instance: OptionChainService;

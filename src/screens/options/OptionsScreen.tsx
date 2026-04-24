@@ -9,8 +9,9 @@ import { SPACING } from '../../types/constants';
 import { OptionSelection } from './components/OptionSelection';
 import { OptionJourney } from './components/OptionJourney';
 import { OptionTrack } from './components/OptionTrack';
-type OptionsTab = 'Track' | 'Journey' | 'Selection';
-const TABS: OptionsTab[] = ['Track', 'Journey', 'Selection'];
+import { OptionSentiment } from './components/OptionSentiment';
+type OptionsTab = 'Track' | 'Journey' | 'Selection' | 'Sentiment';
+const TABS: OptionsTab[] = ['Track', 'Journey', 'Selection', 'Sentiment'];
 
 export function OptionsScreen() {
   const { theme } = useTheme();
@@ -53,6 +54,7 @@ export function OptionsScreen() {
         {activeTab === 'Track' && <OptionTrack />}
         {activeTab === 'Journey' && <OptionJourney />}
         {activeTab === 'Selection' && <OptionSelection />}
+        {activeTab === 'Sentiment' && <OptionSentiment />}
       </View>
     </SafeAreaView>
   );
