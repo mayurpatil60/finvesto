@@ -9,9 +9,10 @@ import { SPACING } from '../../types/constants';
 import { IpoScreen } from './components/IpoScreen';
 import { FundamentalsScreen } from './components/FundamentalsScreen';
 import { InvestmentsScreen } from './components/InvestmentsScreen';
+import { MarketSentiment } from './components/MarketSentiment';
 
-type MarketTab = 'IPO' | 'Fundamentals' | 'Investments';
-const TABS: MarketTab[] = ['IPO', 'Fundamentals', 'Investments'];
+type MarketTab = 'IPO' | 'Fundamentals' | 'Investments' | 'Sentiment';
+const TABS: MarketTab[] = ['IPO', 'Fundamentals', 'Investments', 'Sentiment'];
 
 export function MarketsScreen() {
   const { theme } = useTheme();
@@ -57,6 +58,7 @@ export function MarketsScreen() {
         {activeTab === 'IPO' && <IpoScreen />}
         {activeTab === 'Fundamentals' && <FundamentalsScreen />}
         {activeTab === 'Investments' && <InvestmentsScreen />}
+        {activeTab === 'Sentiment' && <MarketSentiment />}
       </View>
     </SafeAreaView>
   );

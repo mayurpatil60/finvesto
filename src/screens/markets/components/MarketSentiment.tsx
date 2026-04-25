@@ -1,5 +1,5 @@
-// ─── Option Sentiment Component ───────────────────────────────────────────────
-// Displays a bar chart of Buy/Sell sentiment signals per date from Chartink.
+// ─── Market Sentiment Component ───────────────────────────────────────────────
+// Displays a bar chart of Monthly Crossed 30 / 40 sentiment signals per date.
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
@@ -20,11 +20,11 @@ import { CollapsibleCard } from '../../../components/common/CollapsibleCard';
 import { SelectInput } from '../../../components/common/SelectInput';
 import { Ionicons } from '@expo/vector-icons';
 import {
-  CtSentimentType,
-  SENTIMENT_OPTIONS,
-} from '../types/option-sentiment.enum';
-import { CtSentimentDataPoint } from '../types/option-sentiment.interface';
-import { optionSentimentService } from '../services/option-sentiment.service';
+  CtMarketSentimentType,
+  MARKET_SENTIMENT_OPTIONS,
+} from '../types/market-sentiment.enum';
+import { CtMarketSentimentDataPoint } from '../types/market-sentiment.interface';
+import { marketSentimentService } from '../services/market-sentiment.service';
 
 /**
  * Span-aware label builder for all bars.
@@ -53,7 +53,7 @@ function buildLabels(points: { date: string }[]): string[] {
   });
 }
 
-/** Interpolate between two hex-like RGB tuples by intensity 0..1 */
+/** Interpolate between two RGB tuples by intensity 0..1 */
 function interpolateColor(
   low: [number, number, number],
   high: [number, number, number],
@@ -65,36 +65,25 @@ function interpolateColor(
   return `rgb(${r},${g},${b})`;
 }
 
-// Buy gradient: light green → dark green
-const BUY_LOW: [number, number, number] = [187, 247, 208];
-const BUY_HIGH: [number, number, number] = [21, 128, 61];
-
-// Sell gradient: light red → dark red
-const SELL_LOW: [number, number, number] = [254, 202, 202];
-const SELL_HIGH: [number, number, number] = [185, 28, 28];
+// Blue gradient: light blue → dark blue
+const BLUE_LOW: [number, number, number] = [191, 219, 254];
+const BLUE_HIGH: [number, number, number] = [29, 78, 216];
 
 function buildBarData(
-  points: CtSentimentDataPoint[],
-  type: CtSentimentType,
+  points: CtMarketSentimentDataPoint[],
 ): { value: number; label: string; frontColor: string; date: string }[] {
   if (!points.length) return [];
   const maxCount = Math.max(...points.map((p) => p.count), 1);
-  const [low, high] = type === CtSentimentType.Buy
-    ? [BUY_LOW, BUY_HIGH]
-    : [SELL_LOW, SELL_HIGH];
 
   const labels = buildLabels(points);
   return points.map((p, i) => ({
     value: p.count,
     label: labels[i],
-    frontColor: interpolateColor(low, high, p.count / maxCount),
+    frontColor: interpolateColor(BLUE_LOW, BLUE_HIGH, p.count / maxCount),
     date: p.date,
   }));
 }
 
-// ── Constants for bar sizing ──────────────────────────────────────────────────
-// When all bars fit: fill the container proportionally.
-// When overflow: use a comfortable fixed bar+gap so each date is readable.
 const Y_AXIS_WIDTH   = 44;
 const CHART_HEIGHT   = 200;
 const NO_OF_SECTIONS = 5;
@@ -102,11 +91,13 @@ const IDEAL_BAR      = 30;
 const IDEAL_GAP      = 10;
 const TOOLTIP_SPACE  = 44;  // headroom above tallest bar for tooltip
 
-export function OptionSentiment() {
+export function MarketSentiment() {
   const { theme } = useTheme();
   const c = theme.colors;
 
-  const [selectedType, setSelectedType] = useState<CtSentimentType>(CtSentimentType.Buy);
+  const [selectedType, setSelectedType] = useState<CtMarketSentimentType>(
+    CtMarketSentimentType.MonthlyCrossed30,
+  );
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [barData, setBarData] = useState<ReturnType<typeof buildBarData>>([]);
@@ -115,43 +106,34 @@ export function OptionSentiment() {
   const [canScrollRight, setCanScrollRight] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
 
-  const scrollRef      = useRef<ScrollView>(null);
-  const chartScrollRef = useRef<ScrollView>(null);
-  const chartScrollX   = useRef(0);
+  const scrollRef       = useRef<ScrollView>(null);
+  const chartScrollRef  = useRef<ScrollView>(null);
+  const chartScrollX    = useRef(0);
   const selectedTypeRef = useRef(selectedType);
   selectedTypeRef.current = selectedType;
   const justPressedBarRef = useRef(false);
 
-  // ── Sizing math ──────────────────────────────────────────────────────────────
-  const count = barData.length || 1;
-  // Inner plot width (excluding our fixed y-axis panel)
+  const count    = barData.length || 1;
   const plotWidth = Math.max(0, containerWidth - Y_AXIS_WIDTH);
 
-  // Y-axis labels computed from data
-  const maxValue = barData.length ? Math.max(...barData.map((d) => d.value), 1) : 1;
+  const maxValue   = barData.length ? Math.max(...barData.map((d) => d.value), 1) : 1;
   const roundedMax = Math.ceil(maxValue / NO_OF_SECTIONS) * NO_OF_SECTIONS;
-  const yStep = roundedMax / NO_OF_SECTIONS;
-  const yLabels = Array.from({ length: NO_OF_SECTIONS + 1 }, (_, i) =>
-    String(Math.round(yStep * (NO_OF_SECTIONS - i)))
+  const yStep      = roundedMax / NO_OF_SECTIONS;
+  const yLabels    = Array.from({ length: NO_OF_SECTIONS + 1 }, (_, i) =>
+    String(Math.round(yStep * (NO_OF_SECTIONS - i))),
   );
 
-  // Slot width if all bars fit in the container (65% bar, 35% gap)
   const fitSlot    = plotWidth / count;
   const fitBarW    = Math.floor(fitSlot * 0.65);
   const fitSpacing = Math.floor(fitSlot * 0.35);
 
-  // Would the ideal scrollable size overflow?
   const scrollTotalPlot = (IDEAL_BAR + IDEAL_GAP) * count;
   const needsScroll     = containerWidth > 0 && scrollTotalPlot > plotWidth;
 
-  const barWidth  = needsScroll ? IDEAL_BAR : Math.max(10, fitBarW);
-  const spacing   = needsScroll ? IDEAL_GAP : Math.max(4,  fitSpacing);
-  // The width we pass to <BarChart> is the inner plot area
-  const chartInnerWidth = needsScroll
-    ? scrollTotalPlot          // let it be as wide as needed
-    : plotWidth;               // exact fit
+  const barWidth        = needsScroll ? IDEAL_BAR : Math.max(10, fitBarW);
+  const spacing         = needsScroll ? IDEAL_GAP : Math.max(4, fitSpacing);
+  const chartInnerWidth = needsScroll ? scrollTotalPlot : plotWidth;
 
-  // ── Arrow / scroll tracking ───────────────────────────────────────────────
   function handleChartScroll(e: any) {
     const x       = e.nativeEvent.contentOffset.x;
     const totalW  = e.nativeEvent.contentSize.width;
@@ -169,10 +151,8 @@ export function OptionSentiment() {
     chartScrollRef.current?.scrollTo({ x: Math.max(0, next), animated: true });
   }
 
-  // ── Auto-scroll to end when new data arrives ──────────────────────────────
   useEffect(() => {
     if (barData.length && needsScroll) {
-      // Small delay lets the layout settle before scrolling
       const t = setTimeout(() => {
         chartScrollRef.current?.scrollToEnd({ animated: true });
       }, 450);
@@ -180,7 +160,6 @@ export function OptionSentiment() {
     }
   }, [barData, needsScroll]);
 
-  // ── After container is measured, check if right arrow needed ─────────────
   useEffect(() => {
     if (containerWidth > 0 && needsScroll) {
       setCanScrollRight(true);
@@ -197,12 +176,12 @@ export function OptionSentiment() {
   async function loadSentiment(silent = false) {
     if (!silent) setLoading(true);
     try {
-      const res = await optionSentimentService.getSentiment(selectedTypeRef.current);
+      const res = await marketSentimentService.getSentiment(selectedTypeRef.current);
       const points = res.data?.data ?? [];
-      setBarData(buildBarData(points, selectedTypeRef.current));
+      setBarData(buildBarData(points));
       setSelectedIndex(null);
     } catch (e: any) {
-      Alert.alert('Error', e.message ?? 'Failed to load sentiment data');
+      Alert.alert('Error', e.message ?? 'Failed to load market sentiment data');
     } finally {
       if (!silent) setLoading(false);
     }
@@ -223,7 +202,7 @@ export function OptionSentiment() {
       contentContainerStyle={{ paddingTop: SPACING.md, paddingBottom: SPACING.xl }}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
     >
-      <CollapsibleCard title="Option Sentiment">
+      <CollapsibleCard title="Market Sentiment">
         <Pressable onPress={() => {
           if (justPressedBarRef.current) { justPressedBarRef.current = false; return; }
           setSelectedIndex(null);
@@ -232,9 +211,9 @@ export function OptionSentiment() {
         <View style={styles.toolbar}>
           <SelectInput
             label="Type"
-            options={SENTIMENT_OPTIONS}
+            options={MARKET_SENTIMENT_OPTIONS}
             value={selectedType}
-            onChange={(v) => setSelectedType(v as CtSentimentType)}
+            onChange={(v) => setSelectedType(v as CtMarketSentimentType)}
             style={{ flex: 1 }}
           />
 
@@ -263,22 +242,18 @@ export function OptionSentiment() {
             {containerWidth > 0 && (
               <View style={styles.chartRow}>
 
-                {/* ── Fixed Y-axis panel ───────────────────────────── */}
+                {/* Fixed Y-axis panel */}
                 <View style={[styles.yAxisPanel, { borderRightColor: c.border }]}>
                   <View style={{ height: TOOLTIP_SPACE }} />
                   {yLabels.map((label, i) => (
-                    <Text
-                      key={i}
-                      style={[styles.yLabel, { color: c.textSecondary }]}
-                    >
+                    <Text key={i} style={[styles.yLabel, { color: c.textSecondary }]}>
                       {label}
                     </Text>
                   ))}
-                  {/* x-axis label spacer so heights align */}
                   <View style={styles.xLabelSpacer} />
                 </View>
 
-                {/* ── Scrollable bars ──────────────────────────────── */}
+                {/* Scrollable bars */}
                 <View style={{ flex: 1, position: 'relative' }}>
                   {/* Tooltip overlay – sits just above the bar tip */}
                   {selectedIndex !== null && barData[selectedIndex] && (() => {
@@ -289,12 +264,9 @@ export function OptionSentiment() {
                     const TOOLTIP_W = 90;
                     const TOOLTIP_H = 42;
                     const GAP = 4;
-                    // Bar pixel height within CHART_HEIGHT
                     const barPixelH = roundedMax > 0
                       ? (item.value / roundedMax) * CHART_HEIGHT
                       : 0;
-                    // top of bar inside wrapper = TOOLTIP_SPACE + (CHART_HEIGHT - barPixelH)
-                    // tooltip bottom = bar top - GAP  →  top = bar top - GAP - TOOLTIP_H
                     const tooltipTop = Math.max(
                       0,
                       TOOLTIP_SPACE + CHART_HEIGHT - barPixelH - GAP - TOOLTIP_H,
@@ -353,7 +325,6 @@ export function OptionSentiment() {
                     />
                   </ScrollView>
 
-                  {/* Left scroll arrow */}
                   {canScrollLeft && (
                     <View style={[styles.arrowContainer, styles.arrowLeft]}>
                       <TouchableOpacity
@@ -366,7 +337,6 @@ export function OptionSentiment() {
                     </View>
                   )}
 
-                  {/* Right scroll arrow */}
                   {canScrollRight && (
                     <View style={[styles.arrowContainer, styles.arrowRight]}>
                       <TouchableOpacity
@@ -379,13 +349,12 @@ export function OptionSentiment() {
                     </View>
                   )}
                 </View>
-
               </View>
             )}
           </View>
         )}
 
-        {/* Empty */}
+        {/* Empty state */}
         {!loading && barData.length === 0 && (
           <View style={styles.center}>
             <Text style={{ color: c.textSecondary }}>No data available</Text>
@@ -431,26 +400,32 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: 8,
     padding: 8,
+    marginBottom: 2,
+  },
+  center: {
+    height: 200,
     justifyContent: 'center',
     alignItems: 'center',
   },
   chartWrapper: {
+    width: '100%',
     marginTop: SPACING.sm,
   },
   chartRow: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
+    overflow: 'visible',
   },
   yAxisPanel: {
     width: Y_AXIS_WIDTH,
-    height: CHART_HEIGHT + 30 + TOOLTIP_SPACE,
-    justifyContent: 'space-between',
     borderRightWidth: 1,
+    justifyContent: 'space-between',
+    alignItems: 'flex-end',
     paddingRight: 4,
+    height: CHART_HEIGHT + 30 + TOOLTIP_SPACE,
   },
   yLabel: {
     fontSize: 10,
-    textAlign: 'right',
+    lineHeight: 14,
   },
   xLabelSpacer: {
     height: 30,
@@ -458,31 +433,16 @@ const styles = StyleSheet.create({
   arrowContainer: {
     position: 'absolute',
     top: 0,
-    bottom: 30, // leave room above x-axis labels
-    zIndex: 10,
+    bottom: 30,
     justifyContent: 'center',
+    pointerEvents: 'box-none',
   },
-  arrowLeft: {
-    left: 0,
-  },
-  arrowRight: {
-    right: 0,
-  },
+  arrowLeft: { left: 0 },
+  arrowRight: { right: 0 },
   arrow: {
     borderWidth: 1,
-    borderRadius: 20,
-    width: 28,
-    height: 28,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.2,
-    shadowRadius: 3,
-    elevation: 4,
-  },
-  center: {
-    height: 160,
-    justifyContent: 'center',
-    alignItems: 'center',
+    borderRadius: 16,
+    padding: 4,
+    opacity: 0.85,
   },
 });
