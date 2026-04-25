@@ -45,42 +45,99 @@ const gainColorFn = (val: any) => {
 
 const SCHEMA: Record<IpoType, DynamicColumn[]> = {
   'Open': [
-    { field: 'company_name',      header: 'Company',    width: 170, type: 'text',   sortable: true, filterable: true },
-    { field: 'bid_start_date',    header: 'Open',       width: 100, type: 'text',   sortable: true },
-    { field: 'bid_end_date',      header: 'Close',      width: 100, type: 'text',   sortable: true },
-    { field: 'price_range_min',   header: 'Min ₹',      width: 80,  type: 'number', sortable: true },
-    { field: 'price_range_max',   header: 'Max ₹',      width: 80,  type: 'number', sortable: true },
-    { field: 'subscription_text', header: 'Subscribed', width: 110, type: 'text',   sortable: true },
-    { field: 'issue_size',        header: 'Size (Cr)',  width: 90,  type: 'number', sortable: true },
+    { field: 'company_name', header: 'Name',      width: 170, type: 'text',   sortable: true, filterable: true, copyEnabled: true, copyPrefix: 'NSE:' },
+    { field: 'stock_code',   header: 'Code',      width: 80,  type: 'text',   sortable: true },
+    { field: 'open',         header: 'Open',      width: 100, type: 'text',   sortable: true },
+    { field: 'close',        header: 'Close',     width: 100, type: 'text',   sortable: true },
+    { field: 'sme',          header: 'SME',       width: 90,  type: 'text',   sortable: true },
+    { field: 'price',        header: 'Price ₹',   width: 80,  type: 'number', sortable: true },
   ],
   'Listing Soon': [
-    { field: 'company_name',       header: 'Company',    width: 170, type: 'text',   sortable: true, filterable: true },
-    { field: 'open_date',          header: 'Open',       width: 100, type: 'text',   sortable: true },
-    { field: 'close_date',         header: 'Close',      width: 100, type: 'text',   sortable: true },
-    { field: 'listing_date',       header: 'Listing',    width: 100, type: 'text',   sortable: true },
-    { field: 'issue_price',        header: 'Price ₹',    width: 80,  type: 'number', sortable: true },
-    { field: 'total_subscription', header: 'Subscribed', width: 110, type: 'number', sortable: true },
-    { field: 'issue_size',         header: 'Size (Cr)',  width: 90,  type: 'number', sortable: true },
+    { field: 'company_name', header: 'Name',      width: 170, type: 'text',   sortable: true, filterable: true, copyEnabled: true, copyPrefix: 'NSE:' },
+    { field: 'stock_code',   header: 'Code',      width: 80,  type: 'text',   sortable: true },
+    { field: 'open',         header: 'Open',      width: 100, type: 'text',   sortable: true },
+    { field: 'close',        header: 'Close',     width: 100, type: 'text',   sortable: true },
+    { field: 'listing',      header: 'Listing',   width: 100, type: 'text',   sortable: true },
+    { field: 'sme',          header: 'SME',       width: 90,  type: 'text',   sortable: true },
+    { field: 'price',        header: 'Price ₹',   width: 80,  type: 'number', sortable: true },
   ],
   'Recently Listed': [
-    { field: 'company_name',        header: 'Company',   width: 170, type: 'text',   sortable: true, filterable: true, copyEnabled: true, copyPrefix: 'NSE:' },
-    { field: 'listing_date',        header: 'Listed',    width: 100, type: 'text',   sortable: true },
-    { field: 'issue_price',         header: 'Issue ₹',   width: 80,  type: 'number', sortable: true },
-    { field: 'listing_close_price', header: 'Close ₹',   width: 80,  type: 'number', sortable: true },
-    { field: 'listing_gainP',       header: 'Listing %', width: 90,  type: 'number', sortable: true, colorFn: gainColorFn },
-    { field: 'current_gainP',       header: 'Curr %',    width: 80,  type: 'number', sortable: true, colorFn: gainColorFn },
-    { field: 'total_subscription',  header: 'Sub.',      width: 80,  type: 'number', sortable: true },
+    { field: 'company_name',  header: 'Name',      width: 170, type: 'text',   sortable: true, filterable: true, copyEnabled: true, copyPrefix: 'NSE:' },
+    { field: 'stock_code',    header: 'Code',      width: 80,  type: 'text',   sortable: true },
+    { field: 'listed',        header: 'Listed',    width: 100, type: 'text',   sortable: true },
+    { field: 'listing_gainP', header: 'Listing %', width: 90,  type: 'number', sortable: true, colorFn: gainColorFn },
+    { field: 'current_gainP', header: 'Curr %',    width: 80,  type: 'number', sortable: true, colorFn: gainColorFn },
+    { field: 'sme',           header: 'SME',       width: 90,  type: 'text',   sortable: true },
+    { field: 'price',         header: 'Price ₹',   width: 80,  type: 'number', sortable: true },
   ],
   'Listed': [
-    { field: 'company_name',        header: 'Company',   width: 170, type: 'text',   sortable: true, filterable: true, copyEnabled: true, copyPrefix: 'NSE:' },
-    { field: 'listing_date',        header: 'Listed',    width: 100, type: 'text',   sortable: true },
-    { field: 'issue_price',         header: 'Issue ₹',   width: 80,  type: 'number', sortable: true },
-    { field: 'listing_close_price', header: 'Close ₹',   width: 80,  type: 'number', sortable: true },
-    { field: 'listing_gainP',       header: 'Listing %', width: 90,  type: 'number', sortable: true, colorFn: gainColorFn },
-    { field: 'current_gainP',       header: 'Curr %',    width: 80,  type: 'number', sortable: true, colorFn: gainColorFn },
-    { field: 'total_subscription',  header: 'Sub.',      width: 80,  type: 'number', sortable: true },
+    { field: 'company_name',  header: 'Name',      width: 170, type: 'text',   sortable: true, filterable: true, copyEnabled: true, copyPrefix: 'NSE:' },
+    { field: 'stock_code',    header: 'Code',      width: 80,  type: 'text',   sortable: true },
+    { field: 'listed',        header: 'Listed',    width: 100, type: 'text',   sortable: true },
+    { field: 'listing_gainP', header: 'Listing %', width: 90,  type: 'number', sortable: true, colorFn: gainColorFn },
+    { field: 'current_gainP', header: 'Curr %',    width: 80,  type: 'number', sortable: true, colorFn: gainColorFn },
+    { field: 'sme',           header: 'SME',       width: 90,  type: 'text',   sortable: true },
+    { field: 'price',         header: 'Price ₹',   width: 80,  type: 'number', sortable: true },
   ],
 };
+
+// ── Per-type data transforms ───────────────────────────────────────────────────
+const MONTHS: Record<string, string> = {
+  Jan: '01', Feb: '02', Mar: '03', Apr: '04', May: '05', Jun: '06',
+  Jul: '07', Aug: '08', Sep: '09', Oct: '10', Nov: '11', Dec: '12',
+};
+
+function formatDate(raw: string | undefined | null): string {
+  if (!raw) return '-';
+  const clean = raw.replace(',', '').trim();
+  // Already YYYY-MM-DD
+  if (/^\d{4}-\d{2}-\d{2}$/.test(clean)) return clean;
+  // "23 Apr 2026" or "23 Apr 26"
+  const parts = clean.split(' ');
+  if (parts.length === 3) {
+    let [dd, mon, yr] = parts;
+    const mm = MONTHS[mon];
+    if (!mm) return clean;
+    if (yr.length === 2) yr = '20' + yr;
+    return `${yr}-${mm}-${dd.padStart(2, '0')}`;
+  }
+  return clean;
+}
+
+function transformOpen(items: any[]): any[] {
+  return items.map(d => ({
+    company_name: d.company_name,
+    stock_code:   d.NSEcode || d.BSEcode || '-',
+    open:         formatDate(d.bid_start_date),
+    close:        formatDate(d.bid_end_date),
+    sme:          d.is_sme ? 'SME' : 'Mainboard',
+    price:        d.price_range_max,
+  }));
+}
+
+function transformListingSoon(items: any[]): any[] {
+  return items.map(d => ({
+    company_name: d.company_name,
+    stock_code:   d.NSEcode || d.BSEcode || '-',
+    open:         formatDate(d.open_date),
+    close:        formatDate(d.close_date),
+    listing:      formatDate(d.listing_date),
+    sme:          d.is_sme ? 'SME' : 'Mainboard',
+    price:        d.issue_price,
+  }));
+}
+
+function transformRecentOrListed(items: any[]): any[] {
+  return items.map(d => ({
+    company_name:  d.company_name,
+    stock_code:    d.stock_code,
+    listed:        formatDate(d.listing_date),
+    listing_gainP: d.listing_gainP,
+    current_gainP: d.current_gainP,
+    sme:           d.is_sme ? 'SME' : 'Mainboard',
+    price:         d.current_price ?? d.listing_close_price ?? d.issue_price,
+  }));
+}
 
 // ── Component ──────────────────────────────────────────────────────────────────
 export function IpoScreen() {
@@ -105,13 +162,13 @@ export function IpoScreen() {
     try {
       if (type === 'Listed') {
         const res = await marketsService.getIpoListed(y);
-        setData(Array.isArray(res.data) ? res.data : []);
+        setData(transformRecentOrListed(Array.isArray(res.data) ? res.data : []));
       } else {
         const res = await marketsService.getIpoUpcoming();
         const body = res.data as any;
-        if (type === 'Open') setData(body?.upcoming_open ?? []);
-        else if (type === 'Listing Soon') setData(body?.listing_soon ?? []);
-        else if (type === 'Recently Listed') setData(body?.recently_listed ?? []);
+        if (type === 'Open') setData(transformOpen(body?.upcoming_open ?? []));
+        else if (type === 'Listing Soon') setData(transformListingSoon(body?.listing_soon ?? []));
+        else if (type === 'Recently Listed') setData(transformRecentOrListed(body?.recently_listed ?? []));
       }
     } catch (e: any) {
       Alert.alert('Error', e.message);
