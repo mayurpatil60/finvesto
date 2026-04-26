@@ -8,9 +8,12 @@ import {
   Text,
   TouchableOpacity,
   View,
+  type LayoutChangeEvent,
 } from 'react-native';
 import { useTheme } from '../theme/ThemeProvider';
 import { SPACING } from '../../types/constants';
+
+const WIDE_BREAKPOINT = 500;
 
 interface Props {
   page: number;        // 0-indexed current page
@@ -34,6 +37,9 @@ export function DynamicTablePaginator({
   const { theme } = useTheme();
   const c = theme.colors;
   const [showSizePicker, setShowSizePicker] = useState(false);
+  const [wrapperWidth, setWrapperWidth] = useState(0);
+
+  const isWide = wrapperWidth >= WIDE_BREAKPOINT;
 
   const from = totalRows === 0 ? 0 : page * pageSize + 1;
   const to = Math.min((page + 1) * pageSize, totalRows);
@@ -52,48 +58,68 @@ export function DynamicTablePaginator({
     windowPages.push(totalPages - 1);
   }
 
-  return (
-    <View style={[styles.wrapper, { backgroundColor: c.surface, borderTopColor: c.border }]}>
-      {/* Single row: [info + size] [nav buttons] — wraps to 2 lines on narrow screens */}
-      <View style={styles.singleRow}>
-        {/* Left: info + page size */}
-        <View style={styles.leftGroup}>
-          <Text style={[styles.infoText, { color: c.textSecondary }]}>
-            {from}–{to}/{totalRows}
-          </Text>
-          <TouchableOpacity
-            style={[styles.sizeBtn, { borderColor: c.border, backgroundColor: c.background }]}
-            onPress={() => setShowSizePicker(true)}
-          >
-            <Text style={[styles.sizeBtnText, { color: c.text }]}>{pageSize} ▾</Text>
-          </TouchableOpacity>
-        </View>
+  const infoBlock = (
+    <View style={styles.leftGroup}>
+      <Text style={[styles.infoText, { color: c.textSecondary }]}>
+        {from}–{to} of {totalRows}
+      </Text>
+      <TouchableOpacity
+        style={[styles.sizeBtn, { borderColor: c.border, backgroundColor: c.background }]}
+        onPress={() => setShowSizePicker(true)}
+      >
+        <Text style={[styles.sizeBtnText, { color: c.text }]}>{pageSize} ▾</Text>
+      </TouchableOpacity>
+    </View>
+  );
 
-        {/* Right: page navigation */}
-        <View style={styles.pageRow}>
-          <PageBtn label="«" onPress={() => onPageChange(0)} disabled={page === 0} />
-          <PageBtn label="‹" onPress={() => onPageChange(page - 1)} disabled={page === 0} />
-          <View style={styles.numbersRow}>
-              {windowPages.map((p, i) =>
-                p === '…' ? (
-                  <Text key={`ellipsis-${i}`} style={[styles.ellipsis, { color: c.textSecondary }]}>…</Text>
-                ) : (
-                  <TouchableOpacity
-                    key={p}
-                    style={[styles.pageNumBtn, { backgroundColor: p === page ? c.primary : c.background, borderColor: p === page ? c.primary : c.border }]}
-                    onPress={() => onPageChange(p as number)}
-                  >
-                    <Text style={[styles.pageNumText, { color: p === page ? '#fff' : c.text }]}>
-                      {(p as number) + 1}
-                    </Text>
-                  </TouchableOpacity>
-                )
-              )}
-          </View>
-          <PageBtn label="›" onPress={() => onPageChange(page + 1)} disabled={page >= totalPages - 1} />
-          <PageBtn label="»" onPress={() => onPageChange(totalPages - 1)} disabled={page >= totalPages - 1} />
-        </View>
+  const navBlock = (
+    <View style={styles.pageRow}>
+      <PageBtn label="«" onPress={() => onPageChange(0)} disabled={page === 0} />
+      <PageBtn label="‹" onPress={() => onPageChange(page - 1)} disabled={page === 0} />
+      <View style={styles.numbersRow}>
+        {windowPages.map((p, i) =>
+          p === '…' ? (
+            <Text key={`ellipsis-${i}`} style={[styles.ellipsis, { color: c.textSecondary }]}>…</Text>
+          ) : (
+            <TouchableOpacity
+              key={p}
+              style={[styles.pageNumBtn, { backgroundColor: p === page ? c.primary : c.background, borderColor: p === page ? c.primary : c.border }]}
+              onPress={() => onPageChange(p as number)}
+            >
+              <Text style={[styles.pageNumText, { color: p === page ? '#fff' : c.text }]}>
+                {(p as number) + 1}
+              </Text>
+            </TouchableOpacity>
+          )
+        )}
       </View>
+      <PageBtn label="›" onPress={() => onPageChange(page + 1)} disabled={page >= totalPages - 1} />
+      <PageBtn label="»" onPress={() => onPageChange(totalPages - 1)} disabled={page >= totalPages - 1} />
+    </View>
+  );
+
+  return (
+    <View
+      style={[styles.wrapper, { backgroundColor: c.surface, borderTopColor: c.border }]}
+      onLayout={(e: LayoutChangeEvent) => setWrapperWidth(e.nativeEvent.layout.width)}
+    >
+      {isWide ? (
+        /* Wide: single row, info left, nav right */
+        <View style={styles.wideRow}>
+          {infoBlock}
+          {navBlock}
+        </View>
+      ) : (
+        /* Narrow: two rows */
+        <>
+          <View style={styles.narrowRow}>
+            {infoBlock}
+          </View>
+          <View style={[styles.narrowRow, styles.narrowNavRow]}>
+            {navBlock}
+          </View>
+        </>
+      )}
 
       {/* Page size modal */}
       <Modal
@@ -147,17 +173,27 @@ const styles = StyleSheet.create({
     paddingVertical: 5,
     borderTopWidth: 1,
   },
-  singleRow: {
+  /* Wide (≥500px): one row */
+  wideRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    flexWrap: 'wrap',
-    gap: SPACING.xs,
+    justifyContent: 'space-between',
+  },
+  /* Narrow: two stacked rows */
+  narrowRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 2,
+  },
+  narrowNavRow: {
+    justifyContent: 'flex-end',
   },
   leftGroup: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: SPACING.xs,
   },
+  separator: { fontSize: 11 },
   infoText: { fontSize: 11 },
   sizeBtn: {
     borderWidth: 1,
@@ -167,11 +203,9 @@ const styles = StyleSheet.create({
   },
   sizeBtnText: { fontSize: 11 },
   pageRow: {
-    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 3,
-    justifyContent: 'flex-end',
   },
   numbersRow: {
     flexDirection: 'row',
