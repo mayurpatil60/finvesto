@@ -269,8 +269,8 @@ export function OptionTrack() {
             : 'Options nearest to ₹1,000 and ₹3,000 lot-amount — 2 CE + 2 PE per ticker.'}
         </Text>
 
-        {/* Type selector + fetch button row */}
-        <View style={styles.actionsRow}>
+        {/* Type selector */}
+        <View style={styles.inputsRow}>
           <SelectInput
             label="Type"
             value={trackType}
@@ -278,14 +278,6 @@ export function OptionTrack() {
             onChange={onTypeChange}
             style={{ width: 120 }}
           />
-
-          <TouchableOpacity
-            style={[styles.iconBtn, { backgroundColor: '#16a34a' }]}
-            onPress={fetchFresh}
-            disabled={loading}
-          >
-            <Text style={styles.iconBtnText}>☁</Text>
-          </TouchableOpacity>
         </View>
 
         {/* Expiry date input (weekly only) */}
@@ -316,8 +308,15 @@ export function OptionTrack() {
           />
         </View>
 
-        {/* Load + filters row */}
         <View style={styles.actionsRow}>
+          <TouchableOpacity
+            style={[styles.iconBtn, { backgroundColor: '#16a34a' }]}
+            onPress={fetchFresh}
+            disabled={loading}
+          >
+            <Text style={styles.iconBtnText}>☁</Text>
+          </TouchableOpacity>
+
           <TouchableOpacity
             style={[
               styles.btn,
@@ -429,13 +428,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  iconBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 6,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  iconBtnText: { fontSize: 18 },
+  iconBtn: { width: 32, height: 32, borderRadius: 6, alignItems: 'center', justifyContent: 'center' },
+  iconBtnText: { fontSize: 16 },
 });
 

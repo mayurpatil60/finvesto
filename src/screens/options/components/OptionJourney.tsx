@@ -296,7 +296,7 @@ const styles = StyleSheet.create({
   btn: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 6, overflow: 'hidden', minWidth: 56, alignItems: 'center', justifyContent: 'center' },
   btnText: { fontSize: 13, fontWeight: '600' },
   btnIcon: { width: 32, height: 32, borderRadius: 8, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
-  iconBtn: { width: 36, height: 36, borderRadius: 6, alignItems: 'center', justifyContent: 'center' },
-  iconBtnText: { fontSize: 18 },
+  iconBtn: { width: 32, height: 32, borderRadius: 6, alignItems: 'center', justifyContent: 'center' },
+  iconBtnText: { fontSize: 16 },
 });
 

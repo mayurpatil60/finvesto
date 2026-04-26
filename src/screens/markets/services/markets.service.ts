@@ -80,6 +80,41 @@ export class MarketsService {
     if (!res.ok) throw new Error(`Failed to fetch investments: ${res.status}`);
     return res.json();
   }
+
+  // ── Market Signal ─────────────────────────────────────────────────────────────
+
+  async getMarketSignals(
+    timeframe: string,
+  ): Promise<{ status: string; count: number; data: any[] }> {
+    const res = await fetch(
+      `${BASE_URL}/markets/market-signal?timeframe=${encodeURIComponent(timeframe)}`,
+    );
+    if (!res.ok)
+      throw new Error(`Failed to fetch market signals: ${res.status}`);
+    return res.json();
+  }
+
+  async getMarketSignalBatchIds(): Promise<{
+    status: string;
+    count: number;
+    data: string[];
+  }> {
+    const res = await fetch(`${BASE_URL}/markets/market-signal/batch/ids`);
+    if (!res.ok)
+      throw new Error(`Failed to fetch market signal batch ids: ${res.status}`);
+    return res.json();
+  }
+
+  async getMarketSignalBatch(
+    batchId: string,
+  ): Promise<{ status: string; count: number; data: any[] }> {
+    const res = await fetch(
+      `${BASE_URL}/markets/market-signal/batch?batchId=${encodeURIComponent(batchId)}`,
+    );
+    if (!res.ok)
+      throw new Error(`Failed to fetch market signal batch: ${res.status}`);
+    return res.json();
+  }
 }
 
 export const marketsService = MarketsService.getInstance();
