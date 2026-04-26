@@ -111,10 +111,7 @@ export function DynamicTable({
 }: DynamicTableProps) {
   const { theme } = useTheme();
   const c = theme.colors;
-  const { width: deviceWidth } = useWindowDimensions();
-  // Table area = device width minus left+right margins
-  const H_MARGIN = SPACING.md;
-  const availableWidth = deviceWidth - H_MARGIN * 2;
+  const [containerWidth, setContainerWidth] = useState(0);
 
   // ── Schema ──────────────────────────────────────────────────────────────────
   const baseSchema = useMemo(
@@ -308,14 +305,19 @@ export function DynamicTable({
   }
 
   // ── Total table width ─────────────────────────────────────────────────────────
-  // If columns fit within the available width, expand them proportionally so the
-  // table fills the screen. Otherwise keep exact widths and allow horizontal scroll.
+  // Scale columns to fill the available width (measured via onLayout) when each
+  // column would still be at least MIN_COL_WIDTH wide. Otherwise keep fixed widths
+  // and let the horizontal ScrollView handle the overflow.
+  const MIN_COL_WIDTH = 60;
   const rawTotalWidth = visibleCols.reduce((sum, col) => sum + (col.width ?? DEFAULT_COL_WIDTH), 0);
   const expandedCols = useMemo(() => {
-    if (rawTotalWidth >= availableWidth || visibleCols.length === 0) return visibleCols;
-    const ratio = availableWidth / rawTotalWidth;
+    if (visibleCols.length === 0 || containerWidth === 0) return visibleCols;
+    const ratio = containerWidth / rawTotalWidth;
+    const minScaled = Math.floor((visibleCols.reduce((mn, col) => Math.min(mn, col.width ?? DEFAULT_COL_WIDTH), Infinity)) * ratio);
+    // Only scale if every column stays readable
+    if (minScaled < MIN_COL_WIDTH && ratio < 1) return visibleCols;
     return visibleCols.map(col => ({ ...col, width: Math.floor((col.width ?? DEFAULT_COL_WIDTH) * ratio) }));
-  }, [visibleCols, rawTotalWidth, availableWidth]);
+  }, [visibleCols, rawTotalWidth, containerWidth]);
   const totalWidth = expandedCols.reduce((sum, col) => sum + (col.width ?? DEFAULT_COL_WIDTH), 0);
 
   // ── Render helpers ────────────────────────────────────────────────────────────
@@ -369,6 +371,7 @@ export function DynamicTable({
           showsHorizontalScrollIndicator
           style={styles.hScroll}
           contentContainerStyle={{ minWidth: totalWidth }}
+          onLayout={e => setContainerWidth(e.nativeEvent.layout.width)}
         >
           <View style={{ width: Math.max(totalWidth, 1) }}>
             <DynamicTableHeader
