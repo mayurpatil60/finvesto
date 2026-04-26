@@ -24,6 +24,7 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
+  useWindowDimensions,
   View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -110,8 +111,10 @@ export function DynamicTable({
 }: DynamicTableProps) {
   const { theme } = useTheme();
   const c = theme.colors;
-  const [tableWidth, setTableWidth] = useState(0);
-  const availableWidth = tableWidth;
+  const { width: deviceWidth } = useWindowDimensions();
+  // Table area = device width minus left+right margins
+  const H_MARGIN = SPACING.md;
+  const availableWidth = deviceWidth - H_MARGIN * 2;
 
   // ── Schema ──────────────────────────────────────────────────────────────────
   const baseSchema = useMemo(
@@ -309,12 +312,11 @@ export function DynamicTable({
   // table fills the screen. Otherwise keep exact widths and allow horizontal scroll.
   const rawTotalWidth = visibleCols.reduce((sum, col) => sum + (col.width ?? DEFAULT_COL_WIDTH), 0);
   const expandedCols = useMemo(() => {
-    if (visibleCols.length === 0 || availableWidth === 0) return visibleCols;
-    // Always scale columns to fill (or fit) the available width
+    if (rawTotalWidth >= availableWidth || visibleCols.length === 0) return visibleCols;
     const ratio = availableWidth / rawTotalWidth;
     return visibleCols.map(col => ({ ...col, width: Math.floor((col.width ?? DEFAULT_COL_WIDTH) * ratio) }));
   }, [visibleCols, rawTotalWidth, availableWidth]);
-  const totalWidth = availableWidth || rawTotalWidth;
+  const totalWidth = expandedCols.reduce((sum, col) => sum + (col.width ?? DEFAULT_COL_WIDTH), 0);
 
   // ── Render helpers ────────────────────────────────────────────────────────────
   function renderTableContent(isFullscreen = false) {
@@ -367,7 +369,6 @@ export function DynamicTable({
           showsHorizontalScrollIndicator
           style={styles.hScroll}
           contentContainerStyle={{ minWidth: totalWidth }}
-          onLayout={e => setTableWidth(e.nativeEvent.layout.width)}
         >
           <View style={{ width: Math.max(totalWidth, 1) }}>
             <DynamicTableHeader
