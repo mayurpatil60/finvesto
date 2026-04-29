@@ -32,6 +32,7 @@ const SIGNAL_SCHEMA: DynamicColumn[] = [
   { field: 'date',         header: 'Date',          width: 110, type: 'text',   sortable: true },
   { field: 'lowestPrice',  header: 'Low Price',     width: 100, type: 'number', sortable: true },
   { field: 'currentPrice', header: 'Price',         width: 90,  type: 'number', sortable: true },
+  { field: 'diffPercent',  header: 'Diff %',        width: 90,  type: 'number', sortable: true },
 ];
 
 export function MarketSignalScreen() {
@@ -83,6 +84,9 @@ export function MarketSignalScreen() {
           date:         o.date,
           lowestPrice:  o.lowestPrice,
           currentPrice: o.currentPrice,
+          diffPercent:  o.lowestPrice && o.currentPrice
+            ? +((((o.currentPrice - o.lowestPrice) / o.lowestPrice) * 100).toFixed(2))
+            : null,
         }));
       setData(rows);
     } catch (e: any) {

@@ -1,6 +1,4 @@
-// ─── Investments Component ────────────────────────────────────────────────────
-
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -20,7 +18,7 @@ import { CollapsibleCard } from '../../../components/common/CollapsibleCard';
 import { marketsService } from '../services/markets.service';
 
 type InvSegment = 'cash' | 'futures' | 'indices' | 'etf';
-type InvTimeframe = 'daily' | 'weekly' | 'monthly' | 'quarterly';
+type InvTimeframe = 'monthly' | 'quarterly';
 
 const SEGMENT_OPTIONS: SelectOption<InvSegment>[] = [
   { label: 'Cash', value: 'cash' },
@@ -29,18 +27,15 @@ const SEGMENT_OPTIONS: SelectOption<InvSegment>[] = [
   { label: 'ETF', value: 'etf' },
 ];
 const TIMEFRAME_OPTIONS: SelectOption<InvTimeframe>[] = [
-  { label: 'Daily', value: 'daily' },
-  { label: 'Weekly', value: 'weekly' },
-  { label: 'Monthly', value: 'monthly' },
   { label: 'Quarterly', value: 'quarterly' },
+  { label: 'Monthly', value: 'monthly' },
 ];
 
 const INV_SCHEMA: DynamicColumn[] = [
   { field: 'ticker',    header: 'Ticker',    width: 90,  type: 'text',   sortable: true, filterable: true, copyEnabled: true, copyPrefix: 'NSE:' },
-  { field: 'timestamp', header: 'Timestamp', width: 110, type: 'number', sortable: true },
   { field: 'date',      header: 'Date',      width: 100, type: 'text',   sortable: true },
   { field: 'script',    header: 'Script',    width: 80,  type: 'text',   sortable: true },
-  { field: 'close',     header: 'Close',     width: 80,  type: 'number', sortable: true },
+  { field: 'prevPrice', header: 'Prev Price', width: 90, type: 'number', sortable: true },
 ];
 
 export function InvestmentsScreen() {
@@ -48,32 +43,53 @@ export function InvestmentsScreen() {
   const c = theme.colors;
 
   const [segment, setSegment] = useState<InvSegment>('cash');
-  const [timeframe, setTimeframe] = useState<InvTimeframe>('daily');
+  const [timeframe, setTimeframe] = useState<InvTimeframe>('quarterly');
+  const [dateOptions, setDateOptions] = useState<SelectOption<string>[]>([]);
+  const [selectedDate, setSelectedDate] = useState<string>('ALL');
+  const [datesLoading, setDatesLoading] = useState(false);
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<any[]>([]);
   const [refreshing, setRefreshing] = useState(false);
+
+  // Load dates whenever segment or timeframe changes
+  useEffect(() => {
+    loadDates(segment, timeframe);
+    setData([]);
+  }, [segment, timeframe]);
+
+  async function loadDates(seg: string, tf: string) {
+    setDatesLoading(true);
+    setDateOptions([]);
+    setSelectedDate('ALL');
+    try {
+      const res = await marketsService.getInvestmentDates(seg, tf);
+      const dates: string[] = Array.isArray(res.data) ? res.data : [];
+      const opts: SelectOption<string>[] = [
+        { label: 'ALL', value: 'ALL' },
+        ...dates.map((d) => ({ label: d, value: d })),
+      ];
+      setDateOptions(opts);
+      setSelectedDate(dates.length ? dates[0] : 'ALL');
+    } catch {
+      setDateOptions([{ label: 'ALL', value: 'ALL' }]);
+      setSelectedDate('ALL');
+    } finally {
+      setDatesLoading(false);
+    }
+  }
 
   const onRefresh = useCallback(() => {
     if (!data.length) { setRefreshing(false); return; }
     setRefreshing(true);
     loadData().finally(() => setRefreshing(false));
-  }, [segment, timeframe, data]);
+  }, [segment, timeframe, selectedDate, data]);
 
   async function loadData() {
     setLoading(true);
     setData([]);
     try {
-      const res = await marketsService.getInvestments('default', segment, timeframe);
-      const sorted = (Array.isArray(res.data) ? res.data : []).sort(
-        (a: any, b: any) => (b.timestamp ?? 0) - (a.timestamp ?? 0),
-      );
-      setData(sorted.map((o: any) => ({
-        ticker:    o.ticker,
-        timestamp: o.timestamp,
-        date:      o.date,
-        script:    o.script,
-        close:     o.close,
-      })));
+      const res = await marketsService.getInvestmentsFromDb(segment, timeframe, selectedDate);
+      setData(Array.isArray(res.data) ? res.data : []);
     } catch (e: any) {
       Alert.alert('Error', e.message);
     } finally {
@@ -82,31 +98,43 @@ export function InvestmentsScreen() {
   }
 
   return (
-    <ScrollView style={[styles.container, { backgroundColor: c.background }]} contentContainerStyle={styles.content} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={c.primary} />}>
+    <ScrollView
+      style={[styles.container, { backgroundColor: c.background }]}
+      contentContainerStyle={styles.content}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={c.primary} />}
+    >
       {/* ── Form card ──────────────────────────────────────────────────── */}
       <CollapsibleCard title="Investments">
         <Text style={[styles.formNote, { color: c.textSecondary }]}>
-        Chartink backtest investments. Select segment and timeframe, then press Load.
+          Select segment, timeframe and date to load saved investments.
         </Text>
         <View style={styles.selectsRow}>
           <SelectInput
             label="Segment"
             options={SEGMENT_OPTIONS}
             value={segment}
-            onChange={(v) => { setSegment(v); setData([]); }}
+            onChange={(v) => setSegment(v)}
           />
           <SelectInput
             label="Timeframe"
             options={TIMEFRAME_OPTIONS}
             value={timeframe}
-            onChange={(v) => { setTimeframe(v); setData([]); }}
+            onChange={(v) => setTimeframe(v)}
           />
+          {dateOptions.length > 0 && (
+            <SelectInput
+              label="Date"
+              options={dateOptions}
+              value={selectedDate}
+              onChange={(v) => setSelectedDate(v)}
+            />
+          )}
         </View>
         <View style={styles.actionsRow}>
           <TouchableOpacity
-            style={[styles.btn, { backgroundColor: c.primary, opacity: loading ? 0.7 : 1 }]}
+            style={[styles.btn, { backgroundColor: c.primary, opacity: (loading || datesLoading) ? 0.7 : 1 }]}
             onPress={loadData}
-            disabled={loading}
+            disabled={loading || datesLoading}
           >
             {loading
               ? <ActivityIndicator color="#fff" size="small" />
@@ -130,9 +158,8 @@ export function InvestmentsScreen() {
         schema={INV_SCHEMA}
         loading={loading}
         onRefresh={loadData}
-
         title="Investments"
-        emptyText="Select segment and timeframe, then press Load."
+        emptyText="Select segment, timeframe and date, then press Load."
       />
     </ScrollView>
   );

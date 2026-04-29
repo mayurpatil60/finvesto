@@ -12,13 +12,13 @@ import { InvestmentsScreen } from './components/InvestmentsScreen';
 import { MarketSignalScreen } from './components/MarketSignalScreen';
 import { MarketSentiment } from './components/MarketSentiment';
 
-type MarketTab = 'IPO' | 'Fundamentals' | 'Investments' | 'Signal' | 'Sentiment';
-const TABS: MarketTab[] = ['IPO', 'Fundamentals', 'Investments', 'Signal', 'Sentiment'];
+type MarketTab = 'Investments' | 'IPO' | 'Fundamentals' | 'Signal' | 'Sentiment';
+const TABS: MarketTab[] = ['Investments', 'IPO', 'Fundamentals', 'Signal', 'Sentiment'];
 
 export function MarketsScreen() {
   const { theme } = useTheme();
   const c = theme.colors;
-  const [activeTab, setActiveTab] = useState<MarketTab>('IPO');
+  const [activeTab, setActiveTab] = useState<MarketTab>('Investments');
   const activeTabRef = useRef(activeTab);
   activeTabRef.current = activeTab;
 

@@ -81,6 +81,31 @@ export class MarketsService {
     return res.json();
   }
 
+  async getInvestmentsFromDb(
+    segment: string,
+    timeframe: string,
+    date: string,
+  ): Promise<{ status: string; count: number; data: any[] }> {
+    const res = await fetch(
+      `${BASE_URL}/markets/investments/db?segment=${encodeURIComponent(segment)}&timeframe=${encodeURIComponent(timeframe)}&date=${encodeURIComponent(date)}`,
+    );
+    if (!res.ok)
+      throw new Error(`Failed to fetch investments from DB: ${res.status}`);
+    return res.json();
+  }
+
+  async getInvestmentDates(
+    segment: string,
+    timeframe: string,
+  ): Promise<{ status: string; count: number; data: string[] }> {
+    const res = await fetch(
+      `${BASE_URL}/markets/investments/dates?segment=${encodeURIComponent(segment)}&timeframe=${encodeURIComponent(timeframe)}`,
+    );
+    if (!res.ok)
+      throw new Error(`Failed to fetch investment dates: ${res.status}`);
+    return res.json();
+  }
+
   // ── Market Signal ─────────────────────────────────────────────────────────────
 
   async getMarketSignals(
