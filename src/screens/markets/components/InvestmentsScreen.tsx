@@ -39,14 +39,11 @@ export function InvestmentsScreen() {
   const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
-    loadDates();
-    setData([]);
+    if (!dateOptions.length) loadDates();
   }, []);
 
   async function loadDates() {
     setDatesLoading(true);
-    setDateOptions([]);
-    setSelectedDate('ALL');
     try {
       const res = await marketsService.getInvestmentDates(DEFAULT_SEGMENT, DEFAULT_TIMEFRAME);
       const dates: string[] = Array.isArray(res.data) ? res.data : [];

@@ -98,10 +98,7 @@ export function OptionJourney() {
         : await optionJourneyService.getBatchIds();
       const ids: string[] = res.data ?? [];
       setBatches(ids);
-      if (ids.length) {
-        setSelectedBatch(ids[0]);
-        await loadBatch(ids[0]);
-      }
+      if (ids.length) setSelectedBatch(ids[0]);
     } catch (e: any) {
       Alert.alert('Error', e.message ?? 'Failed to load batch ids');
     }
