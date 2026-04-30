@@ -17,19 +17,8 @@ import { SPACING } from '../../../types/constants';
 import { CollapsibleCard } from '../../../components/common/CollapsibleCard';
 import { marketsService } from '../services/markets.service';
 
-type InvSegment = 'cash' | 'futures' | 'indices' | 'etf';
-type InvTimeframe = 'monthly' | 'quarterly';
-
-const SEGMENT_OPTIONS: SelectOption<InvSegment>[] = [
-  { label: 'Cash', value: 'cash' },
-  { label: 'Futures', value: 'futures' },
-  { label: 'Indices', value: 'indices' },
-  { label: 'ETF', value: 'etf' },
-];
-const TIMEFRAME_OPTIONS: SelectOption<InvTimeframe>[] = [
-  { label: 'Quarterly', value: 'quarterly' },
-  { label: 'Monthly', value: 'monthly' },
-];
+const DEFAULT_SEGMENT = 'cash';
+const DEFAULT_TIMEFRAME = 'quarterly';
 
 const INV_SCHEMA: DynamicColumn[] = [
   { field: 'ticker',    header: 'Ticker',    width: 90,  type: 'text',   sortable: true, filterable: true, copyEnabled: true, copyPrefix: 'NSE:' },
@@ -42,8 +31,6 @@ export function InvestmentsScreen() {
   const { theme } = useTheme();
   const c = theme.colors;
 
-  const [segment, setSegment] = useState<InvSegment>('cash');
-  const [timeframe, setTimeframe] = useState<InvTimeframe>('quarterly');
   const [dateOptions, setDateOptions] = useState<SelectOption<string>[]>([]);
   const [selectedDate, setSelectedDate] = useState<string>('ALL');
   const [datesLoading, setDatesLoading] = useState(false);
@@ -51,18 +38,17 @@ export function InvestmentsScreen() {
   const [data, setData] = useState<any[]>([]);
   const [refreshing, setRefreshing] = useState(false);
 
-  // Load dates whenever segment or timeframe changes
   useEffect(() => {
-    loadDates(segment, timeframe);
+    loadDates();
     setData([]);
-  }, [segment, timeframe]);
+  }, []);
 
-  async function loadDates(seg: string, tf: string) {
+  async function loadDates() {
     setDatesLoading(true);
     setDateOptions([]);
     setSelectedDate('ALL');
     try {
-      const res = await marketsService.getInvestmentDates(seg, tf);
+      const res = await marketsService.getInvestmentDates(DEFAULT_SEGMENT, DEFAULT_TIMEFRAME);
       const dates: string[] = Array.isArray(res.data) ? res.data : [];
       const opts: SelectOption<string>[] = [
         { label: 'ALL', value: 'ALL' },
@@ -82,13 +68,13 @@ export function InvestmentsScreen() {
     if (!data.length) { setRefreshing(false); return; }
     setRefreshing(true);
     loadData().finally(() => setRefreshing(false));
-  }, [segment, timeframe, selectedDate, data]);
+  }, [selectedDate, data]);
 
   async function loadData() {
     setLoading(true);
     setData([]);
     try {
-      const res = await marketsService.getInvestmentsFromDb(segment, timeframe, selectedDate);
+      const res = await marketsService.getInvestmentsFromDb(DEFAULT_SEGMENT, DEFAULT_TIMEFRAME, selectedDate);
       setData(Array.isArray(res.data) ? res.data : []);
     } catch (e: any) {
       Alert.alert('Error', e.message);
@@ -106,21 +92,9 @@ export function InvestmentsScreen() {
       {/* ── Form card ──────────────────────────────────────────────────── */}
       <CollapsibleCard title="Investments">
         <Text style={[styles.formNote, { color: c.textSecondary }]}>
-          Select segment, timeframe and date to load saved investments.
+          Select a date to load saved investments.
         </Text>
         <View style={styles.selectsRow}>
-          <SelectInput
-            label="Segment"
-            options={SEGMENT_OPTIONS}
-            value={segment}
-            onChange={(v) => setSegment(v)}
-          />
-          <SelectInput
-            label="Timeframe"
-            options={TIMEFRAME_OPTIONS}
-            value={timeframe}
-            onChange={(v) => setTimeframe(v)}
-          />
           {dateOptions.length > 0 && (
             <SelectInput
               label="Date"
@@ -159,7 +133,7 @@ export function InvestmentsScreen() {
         loading={loading}
         onRefresh={loadData}
         title="Investments"
-        emptyText="Select segment, timeframe and date, then press Load."
+        emptyText="Select a date, then press Load."
       />
     </ScrollView>
   );
