@@ -8,6 +8,8 @@ import React, { createContext, useContext, useEffect, useRef, useState } from "r
 import * as Notifications from "expo-notifications";
 import { pushNotificationService } from "../../services/PushNotificationService";
 import { ensureNotificationHandler } from "../../services/PushNotificationService";
+import { useAuth } from "../auth/AuthProvider";
+import { registerPushToken } from "../../services/notification/notification.service";
 import type { INotificationPayload } from "../../types/interfaces";
 
 // Set handler exactly once when the module loads
@@ -41,6 +43,7 @@ export function PushNotificationHandler({
   onNotificationReceived,
   onNotificationResponse,
 }: PushNotificationHandlerProps) {
+  const { user } = useAuth();
   const [expoPushToken, setExpoPushToken] = useState<string | null>(null);
   const [lastNotification, setLastNotification] =
     useState<Notifications.Notification | null>(null);
@@ -50,6 +53,7 @@ export function PushNotificationHandler({
   const notificationListener = useRef<Notifications.EventSubscription | null>(null);
   const responseListener = useRef<Notifications.EventSubscription | null>(null);
   const registered = useRef(false);
+  const tokenRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (registered.current) return; // prevent double-registration on re-render
@@ -57,6 +61,7 @@ export function PushNotificationHandler({
 
     pushNotificationService.registerForPushNotifications().then((token) => {
       if (token) {
+        tokenRef.current = token;
         setExpoPushToken(token);
         onTokenReceived?.(token);
       }
@@ -79,6 +84,15 @@ export function PushNotificationHandler({
       responseListener.current?.remove();
     };
   }, []);
+
+  // Register the push token with the backend whenever the user logs in
+  useEffect(() => {
+    if (user && tokenRef.current) {
+      registerPushToken(tokenRef.current).catch(() => {
+        // Silent fail — will retry next login
+      });
+    }
+  }, [user]);
 
   const value: IPushNotificationContext = {
     expoPushToken,

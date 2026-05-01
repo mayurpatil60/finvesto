@@ -39,7 +39,16 @@
       "url": "https://u.expo.dev/778634ef-de86-45f4-8c7e-3102f66cd9f8"
     },
     "plugins": [
-      "expo-secure-store"
+      "expo-secure-store",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/icon.png",
+          "color": "#1A73E8",
+          "defaultChannel": "default",
+          "sounds": []
+        }
+      ]
     ]
   }
 }

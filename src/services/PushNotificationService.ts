@@ -54,7 +54,9 @@ class PushNotificationService implements IPushNotificationService {
       return null;
     }
 
-    const tokenData = await Notifications.getExpoPushTokenAsync();
+    const tokenData = await Notifications.getExpoPushTokenAsync({
+      projectId: "778634ef-de86-45f4-8c7e-3102f66cd9f8",
+    });
     return tokenData.data;
   }
 
