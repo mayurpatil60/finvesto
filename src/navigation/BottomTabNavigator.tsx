@@ -1,4 +1,4 @@
-// ─── Bottom Tab Navigator ─────────────────────────────────────────────────────
+// Bottom Tab Navigator
 
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -8,7 +8,6 @@ import { OptionsScreen } from '../screens/options/OptionsScreen';
 import { MarketsScreen } from '../screens/markets/MarketsScreen';
 import { ToolsScreen } from '../screens/tools/ToolsScreen';
 import { SettingsNavigator } from './SettingsNavigator';
-import { NotificationHistoryScreen } from '../screens/notifications/NotificationHistoryScreen';
 import { useTheme } from '../components/theme/ThemeProvider';
 import { usePermission } from '../hooks/usePermission';
 import { CtPermission } from '../types/enums/permission.enum';
@@ -18,7 +17,6 @@ export type BottomTabParamList = {
   Options: undefined;
   Markets: { initialTab?: string } | undefined;
   Tools: undefined;
-  Notifications: undefined;
   Settings: undefined;
 };
 
@@ -28,12 +26,11 @@ type TabName = keyof BottomTabParamList;
 type IconName = React.ComponentProps<typeof Ionicons>['name'];
 
 const TAB_ICONS: Record<TabName, { active: IconName; inactive: IconName }> = {
-  Home:          { active: 'home', inactive: 'home-outline' },
-  Options:       { active: 'bar-chart', inactive: 'bar-chart-outline' },
-  Markets:       { active: 'trending-up', inactive: 'trending-up-outline' },
-  Tools:         { active: 'construct', inactive: 'construct-outline' },
-  Notifications: { active: 'notifications', inactive: 'notifications-outline' },
-  Settings:      { active: 'settings', inactive: 'settings-outline' },
+  Home:     { active: 'home',        inactive: 'home-outline' },
+  Options:  { active: 'bar-chart',   inactive: 'bar-chart-outline' },
+  Markets:  { active: 'trending-up', inactive: 'trending-up-outline' },
+  Tools:    { active: 'construct',   inactive: 'construct-outline' },
+  Settings: { active: 'settings',    inactive: 'settings-outline' },
 };
 
 export function BottomTabNavigator() {
@@ -43,7 +40,6 @@ export function BottomTabNavigator() {
 
   return (
     <Tab.Navigator
-      initialRouteName="Home"
       screenOptions={({ route }) => ({
         headerShown: false,
         tabBarShowLabel: false,
@@ -55,16 +51,13 @@ export function BottomTabNavigator() {
           paddingBottom: 6,
           paddingTop: 6,
         },
-        tabBarIcon: ({ focused }) => {
-          const icons = TAB_ICONS[route.name as TabName];
-          return (
-            <Ionicons
-              name={focused ? icons.active : icons.inactive}
-              size={20}
-              color={focused ? c.primary : c.textSecondary}
-            />
-          );
-        },
+        tabBarIcon: ({ focused }) => (
+          <Ionicons
+            name={TAB_ICONS[route.name as TabName][focused ? 'active' : 'inactive']}
+            size={20}
+            color={focused ? c.primary : c.textSecondary}
+          />
+        ),
       })}
     >
       {hasPermission(CtPermission.VIEW_HOME) && (
@@ -79,10 +72,6 @@ export function BottomTabNavigator() {
       {hasPermission(CtPermission.VIEW_TOOLS) && (
         <Tab.Screen name="Tools" component={ToolsScreen} />
       )}
-      {hasPermission(CtPermission.VIEW_NOTIFICATIONS) && (
-        <Tab.Screen name="Notifications" component={NotificationHistoryScreen} />
-      )}
-      {/* Settings always visible for logged-in users */}
       <Tab.Screen name="Settings" component={SettingsNavigator} />
     </Tab.Navigator>
   );

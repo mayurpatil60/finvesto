@@ -3,11 +3,29 @@
 import React from 'react';
 import { ActivityIndicator, View } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { BottomTabNavigator } from './BottomTabNavigator';
 import { AuthNavigator } from './AuthNavigator';
+import { NotificationHistoryScreen } from '../screens/notifications/NotificationHistoryScreen';
 import { useAuth } from '../components/auth/AuthProvider';
 import { useTheme } from '../components/theme/ThemeProvider';
+
+export type RootStackParamList = {
+  Tabs: undefined;
+  Notifications: undefined;
+};
+
+const Stack = createNativeStackNavigator<RootStackParamList>();
+
+function AppStack() {
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="Tabs" component={BottomTabNavigator} />
+      <Stack.Screen name="Notifications" component={NotificationHistoryScreen} />
+    </Stack.Navigator>
+  );
+}
 
 export function AppNavigator() {
   const { user, isLoading } = useAuth();
@@ -24,7 +42,7 @@ export function AppNavigator() {
   return (
     <SafeAreaProvider>
       <NavigationContainer>
-        {user ? <BottomTabNavigator /> : <AuthNavigator />}
+        {user ? <AppStack /> : <AuthNavigator />}
       </NavigationContainer>
     </SafeAreaProvider>
   );

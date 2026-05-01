@@ -59,6 +59,8 @@ export interface IRemoteNotification {
   status: string;
   sentAt: string;
   data?: Record<string, unknown>;
+  readBy: string[];
+  deletedBy: string[];
 }
 
 export interface INotificationHistoryResponse {

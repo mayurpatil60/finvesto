@@ -1,5 +1,10 @@
 import { environment } from "../../environments/environment";
-import { authenticatedGet } from "../auth/auth.service";
+import {
+  authenticatedDelete,
+  authenticatedGet,
+  authenticatedPatch,
+  authenticatedPost,
+} from "../auth/auth.service";
 import { INotificationHistoryResponse } from "../../types/interfaces";
 
 export async function getNotificationHistory(
@@ -9,6 +14,29 @@ export async function getNotificationHistory(
   return authenticatedGet<INotificationHistoryResponse>(
     `/notifications/history?page=${page}&limit=${limit}`,
   );
+}
+
+export async function getUnreadCount(): Promise<number> {
+  const res = await authenticatedGet<{ count: number }>(
+    "/notifications/unread-count",
+  );
+  return res.count;
+}
+
+export async function markNotificationRead(id: string): Promise<void> {
+  await authenticatedPatch(`/notifications/read/${id}`);
+}
+
+export async function markAllNotificationsRead(): Promise<void> {
+  await authenticatedPost("/notifications/read-all");
+}
+
+export async function deleteNotification(id: string): Promise<void> {
+  await authenticatedDelete(`/notifications/${id}`);
+}
+
+export async function clearAllNotifications(): Promise<void> {
+  await authenticatedDelete("/notifications/clear");
 }
 
 async function doRegisterPushToken(

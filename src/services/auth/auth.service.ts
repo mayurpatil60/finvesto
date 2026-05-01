@@ -134,3 +134,48 @@ export async function authenticatedGet<T>(path: string): Promise<T> {
   if (!res.ok) throw new Error(data.message);
   return data as T;
 }
+
+async function authenticatedRequest<T>(
+  method: string,
+  path: string,
+  body?: unknown,
+): Promise<T> {
+  let token = await getAccessToken();
+  const headers: Record<string, string> = { Authorization: `Bearer ${token}` };
+  if (body !== undefined) headers["Content-Type"] = "application/json";
+
+  const makeRequest = (t: string) =>
+    fetch(`${environment.API_BASE}${path}`, {
+      method,
+      headers: { ...headers, Authorization: `Bearer ${t}` },
+      body: body !== undefined ? JSON.stringify(body) : undefined,
+    });
+
+  let res = await makeRequest(token ?? "");
+  if (res.status === 401) {
+    const refreshed = await refreshTokens();
+    if (!refreshed) throw new Error("Session expired");
+    res = await makeRequest(refreshed.accessToken);
+  }
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message);
+  return data as T;
+}
+
+export async function authenticatedPost<T>(
+  path: string,
+  body?: unknown,
+): Promise<T> {
+  return authenticatedRequest<T>("POST", path, body);
+}
+
+export async function authenticatedPatch<T>(
+  path: string,
+  body?: unknown,
+): Promise<T> {
+  return authenticatedRequest<T>("PATCH", path, body);
+}
+
+export async function authenticatedDelete<T>(path: string): Promise<T> {
+  return authenticatedRequest<T>("DELETE", path);
+}
