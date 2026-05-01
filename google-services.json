@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1001683462939",
+    "project_id": "finvesto-c1065",
+    "storage_bucket": "finvesto-c1065.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1001683462939:android:6d4792d9efc39f1d1c01be",
+        "android_client_info": {
+          "package_name": "com.mayurpatil60.finvesto"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCtpA0thGCcEtrmLH_jB_SY5sKJ9cUUrS0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
