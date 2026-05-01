@@ -11,6 +11,8 @@ import { AppHeader } from '../../components/layout/AppHeader';
 import { APP_NAME, SPACING } from '../../types/constants';
 import { SettingsStackParamList } from '../../navigation/SettingsNavigator';
 import { useAuth } from '../../components/auth/AuthProvider';
+import { usePermission } from '../../hooks/usePermission';
+import { CtPermission } from '../../types/enums/permission.enum';
 
 export function SettingsScreen() {
   const { theme, isDark, setDark } = useTheme();
@@ -18,6 +20,8 @@ export function SettingsScreen() {
   const [updating, setUpdating] = useState(false);
   const navigation = useNavigation<NativeStackNavigationProp<SettingsStackParamList>>();
   const { logout, user } = useAuth();
+  const { hasPermission } = usePermission();
+  const canViewConfig = hasPermission(CtPermission.VIEW_CONFIG);
 
   async function checkForUpdate() {
     if (__DEV__) {
@@ -69,25 +73,20 @@ export function SettingsScreen() {
         </View>
 
         {/* Tools Section */}
-        <Text style={[styles.sectionLabel, { color: c.textSecondary }]}>TOOLS</Text>
-
-        <View style={[styles.card, { backgroundColor: c.surface, borderColor: c.border }]}>
-          <TouchableOpacity style={styles.row} onPress={() => navigation.navigate('Config')}>
-            <View style={styles.rowLeft}>
-              <Text style={[styles.rowTitle, { color: c.text }]}>Config</Text>
-              <Text style={[styles.rowSubtitle, { color: c.textSecondary }]}>Set expiry date and app config</Text>
+        {canViewConfig && (
+          <>
+            <Text style={[styles.sectionLabel, { color: c.textSecondary }]}>TOOLS</Text>
+            <View style={[styles.card, { backgroundColor: c.surface, borderColor: c.border }]}>
+              <TouchableOpacity style={styles.row} onPress={() => navigation.navigate('Config')}>
+                <View style={styles.rowLeft}>
+                  <Text style={[styles.rowTitle, { color: c.text }]}>Config</Text>
+                  <Text style={[styles.rowSubtitle, { color: c.textSecondary }]}>Set expiry date and app config</Text>
+                </View>
+                <Text style={[styles.rowValue, { color: c.textSecondary }]}>›</Text>
+              </TouchableOpacity>
             </View>
-            <Text style={[styles.rowValue, { color: c.textSecondary }]}>›</Text>
-          </TouchableOpacity>
-          <View style={[styles.divider, { backgroundColor: c.border }]} />
-          <TouchableOpacity style={styles.row} onPress={() => navigation.navigate('Cleanup')}>
-            <View style={styles.rowLeft}>
-              <Text style={[styles.rowTitle, { color: c.text }]}>Cleanup Options Data</Text>
-              <Text style={[styles.rowSubtitle, { color: c.textSecondary }]}>Delete option range records by expiry</Text>
-            </View>
-            <Text style={[styles.rowValue, { color: c.textSecondary }]}>›</Text>
-          </TouchableOpacity>
-        </View>
+          </>
+        )}
 
         {/* Updates Section */}
         <Text style={[styles.sectionLabel, { color: c.textSecondary }]}>UPDATES</Text>

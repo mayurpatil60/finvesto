@@ -5,6 +5,7 @@ export enum CtPermission {
   VIEW_TOOLS = "view:tools",
   VIEW_NOTIFICATIONS = "view:notifications",
   VIEW_SETTINGS = "view:settings",
+  VIEW_CONFIG = "view:config",
   ADMIN_USERS = "admin:users",
   ADMIN_NOTIFICATIONS = "admin:notifications",
   WILDCARD = "*",

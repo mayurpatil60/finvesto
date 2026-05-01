@@ -28,18 +28,6 @@ export class SettingsService {
     if (!res.ok) throw new Error(`Failed to save expiry: ${res.status}`);
     return res.json();
   }
-
-  async deleteOptionRangeByExpiry(
-    expiry: string,
-  ): Promise<{ status: string; deletedCount: number }> {
-    const res = await fetch(
-      `${BASE_URL}/options/option-range/by-expiry?expiry=${encodeURIComponent(expiry)}`,
-      { method: "DELETE" },
-    );
-    if (!res.ok)
-      throw new Error(`Failed to delete option range: ${res.status}`);
-    return res.json();
-  }
 }
 
 export const settingsService = SettingsService.getInstance();
