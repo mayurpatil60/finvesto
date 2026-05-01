@@ -1,4 +1,4 @@
-// ─── Home / Dashboard Screen ──────────────────────────────────────────────────
+// ─── Home Screen ──────────────────────────────────────────────────────────────
 
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
@@ -12,12 +12,12 @@ import { marketsService } from '../markets/services/markets.service';
 import { MarketSentiment } from '../markets/components/MarketSentiment';
 import type { BottomTabParamList } from '../../navigation/BottomTabNavigator';
 
-type DashboardNavProp = BottomTabNavigationProp<BottomTabParamList, 'Home'>;
+type HomeNavProp = BottomTabNavigationProp<BottomTabParamList, 'Home'>;
 
 export function HomeScreen() {
   const { theme } = useTheme();
   const c = theme.colors;
-  const navigation = useNavigation<DashboardNavProp>();
+  const navigation = useNavigation<HomeNavProp>();
 
   const [latestDate, setLatestDate] = useState<string | null>(null);
   const [latestCount, setLatestCount] = useState<number>(0);
@@ -65,7 +65,7 @@ export function HomeScreen() {
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: c.background }]}>
-      <AppHeader title="Dashboard" />
+      <AppHeader title="Home" />
       <ScrollView contentContainerStyle={styles.body}>
         {/* Row 1: Quarter + Monthly invest */}
         <View style={styles.row}>

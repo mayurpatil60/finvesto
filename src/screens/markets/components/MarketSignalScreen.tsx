@@ -1,6 +1,6 @@
 // ─── Market Signal Component ───────────────────────────────────────────────────
 
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -30,7 +30,6 @@ const SIGNAL_SCHEMA: DynamicColumn[] = [
 export function MarketSignalScreen() {
   const { theme } = useTheme();
   const c = theme.colors;
-  const scrollRef = useRef<ScrollView>(null);
 
   const [dateOptions, setDateOptions]   = useState<{ label: string; value: string }[]>([]);
   const [selectedDate, setSelectedDate] = useState('');
@@ -48,7 +47,6 @@ export function MarketSignalScreen() {
     setRefreshing(true);
     loadSignals(selectedDate, true).finally(() => {
       setRefreshing(false);
-      scrollRef.current?.scrollTo({ y: 0, animated: false });
     });
   }, [selectedDate, data]);
 
@@ -61,7 +59,6 @@ export function MarketSignalScreen() {
       setDateOptions(options);
       const first = ids.length ? ids[0] : 'ALL';
       setSelectedDate(first);
-      await loadSignals(first);
     } catch (e: any) {
       setDateOptions([{ label: 'ALL', value: 'ALL' }]);
       setSelectedDate('ALL');
@@ -95,14 +92,13 @@ export function MarketSignalScreen() {
 
   return (
     <ScrollView
-      ref={scrollRef}
       style={[styles.container, { backgroundColor: c.background }]}
       contentContainerStyle={styles.content}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={c.primary} />}
     >
-      <CollapsibleCard title="Market Signal">
+      <CollapsibleCard title="Signal">
         <Text style={[styles.subtitle, { color: c.textSecondary }]}>
-          RSI crossover signals (weekly/monthly/quarterly). Fetch fresh data or load a saved batch.
+          Look for stocks with an initial RSI breakout above 60.
         </Text>
 
         {/* Date selector */}
@@ -147,7 +143,7 @@ export function MarketSignalScreen() {
           schema={SIGNAL_SCHEMA}
           loading={loading}
           onRefresh={() => loadSignals(selectedDate, true)}
-          title="Market Signal"
+          title="Signal"
           emptyText="Select a date and press Load."
         />
       )}

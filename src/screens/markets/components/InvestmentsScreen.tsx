@@ -87,9 +87,9 @@ export function InvestmentsScreen() {
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={c.primary} />}
     >
       {/* ── Form card ──────────────────────────────────────────────────── */}
-      <CollapsibleCard title="Investments">
+      <CollapsibleCard title="Invest">
         <Text style={[styles.formNote, { color: c.textSecondary }]}>
-          Select a date to load saved investments.
+          Invest in stocks by combining Growth and Value investing strategies.
         </Text>
         <View style={styles.selectsRow}>
           {dateOptions.length > 0 && (
@@ -129,7 +129,7 @@ export function InvestmentsScreen() {
         schema={INV_SCHEMA}
         loading={loading}
         onRefresh={loadData}
-        title="Investments"
+        title="Invest"
         emptyText="Select a date, then press Load."
       />
     </ScrollView>

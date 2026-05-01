@@ -13,15 +13,15 @@ import { InvestmentsScreen } from './components/InvestmentsScreen';
 import { MarketSignalScreen } from './components/MarketSignalScreen';
 import type { BottomTabParamList } from '../../navigation/BottomTabNavigator';
 
-type MarketTab = 'Investments' | 'IPO' | 'Fundamentals' | 'Signal';
-const TABS: MarketTab[] = ['Investments', 'IPO', 'Fundamentals', 'Signal'];
+type MarketTab = 'Invest' | 'Signal' | 'IPO' | 'Fundamentals';
+const TABS: MarketTab[] = ['Invest', 'Signal', 'IPO', 'Fundamentals'];
 
 export function MarketsScreen() {
   const { theme } = useTheme();
   const c = theme.colors;
   const route = useRoute<RouteProp<BottomTabParamList, 'Markets'>>();
   const [activeTab, setActiveTab] = useState<MarketTab>(
-    (route.params?.initialTab as MarketTab) ?? 'Investments',
+    (route.params?.initialTab as MarketTab) ?? 'Invest',
   );
   const activeTabRef = useRef(activeTab);
   activeTabRef.current = activeTab;
@@ -66,10 +66,10 @@ export function MarketsScreen() {
 
       {/* Active component */}
       <View style={styles.content} {...swipePanResponder.panHandlers}>
+        {activeTab === 'Invest' && <InvestmentsScreen />}
+        {activeTab === 'Signal' && <MarketSignalScreen />}
         {activeTab === 'IPO' && <IpoScreen />}
         {activeTab === 'Fundamentals' && <FundamentalsScreen />}
-        {activeTab === 'Investments' && <InvestmentsScreen />}
-        {activeTab === 'Signal' && <MarketSignalScreen />}
       </View>
     </SafeAreaView>
   );

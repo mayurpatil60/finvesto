@@ -182,7 +182,7 @@ export function IpoScreen() {
       {/* ── Form card ────────────────────────────────────────────────────── */}
       <CollapsibleCard title="IPO">
         <Text style={[styles.formNote, { color: c.textSecondary }]}>
-          View upcoming or recently listed IPOs. DynamicTable — global &amp; column search, multi-sort, filters, export built-in.
+          Apply to active IPOs and stay updated on upcoming and recent listings.
         </Text>
 
         <View style={styles.selectsRow}>

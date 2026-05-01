@@ -1,7 +1,7 @@
 // ─── Options Screen ──────────────────────────────────────────────────────────
 
 import React, { useRef, useState } from 'react';
-import { PanResponder, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { PanResponder, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppHeader } from '../../components/layout/AppHeader';
 import { useTheme } from '../../components/theme/ThemeProvider';
@@ -38,7 +38,7 @@ export function OptionsScreen() {
       <AppHeader title="Options" />
 
       {/* Top tabs */}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={[styles.tabBar, { borderBottomColor: c.border }]}>
+      <View style={[styles.tabBar, { borderBottomColor: c.border }]}>
         {TABS.map(tab => (
           <TouchableOpacity
             key={tab}
@@ -48,7 +48,7 @@ export function OptionsScreen() {
             <Text style={[styles.tabText, { color: activeTab === tab ? c.primary : c.textSecondary }]}>{tab}</Text>
           </TouchableOpacity>
         ))}
-      </ScrollView>
+      </View>
 
       <View style={styles.content} {...swipePanResponder.panHandlers}>
         {activeTab === 'Track' && <OptionTrack />}
@@ -63,12 +63,12 @@ export function OptionsScreen() {
 const styles = StyleSheet.create({
   safeArea: { flex: 1 },
   tabBar: {
+    flexDirection: 'row',
     borderBottomWidth: 1,
-    flexGrow: 0,
   },
   tab: {
+    flex: 1,
     paddingVertical: SPACING.sm,
-    paddingHorizontal: SPACING.md,
     alignItems: 'center',
   },
   tabText: { fontSize: 13, fontWeight: '600' },
