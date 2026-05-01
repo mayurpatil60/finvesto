@@ -61,10 +61,15 @@ export function PushNotificationHandler({
 
     pushNotificationService.registerForPushNotifications().then((token) => {
       if (token) {
+        console.log("[PushToken] Expo push token obtained:", token);
         tokenRef.current = token;
         setExpoPushToken(token);
         onTokenReceived?.(token);
+      } else {
+        console.warn("[PushToken] No token returned — check device/permissions");
       }
+    }).catch((err) => {
+      console.error("[PushToken] Error getting push token:", err);
     });
 
     notificationListener.current =

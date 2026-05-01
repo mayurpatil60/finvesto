@@ -11,11 +11,11 @@ export async function getNotificationHistory(
   );
 }
 
-export async function registerPushToken(token: string): Promise<void> {
-  const { getAccessToken, refreshTokens } =
-    await import("../auth/auth.service");
-  let accessToken = await getAccessToken();
-  const res = await fetch(`${environment.API_BASE}/users/push-token`, {
+async function doRegisterPushToken(
+  token: string,
+  accessToken: string,
+): Promise<Response> {
+  return fetch(`${environment.API_BASE}/users/push-token`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -23,17 +23,32 @@ export async function registerPushToken(token: string): Promise<void> {
     },
     body: JSON.stringify({ token }),
   });
+}
+
+export async function registerPushToken(token: string): Promise<void> {
+  console.log("[PushToken] Registering token:", token);
+  const { getAccessToken, refreshTokens } =
+    await import("../auth/auth.service");
+  let accessToken = await getAccessToken();
+  if (!accessToken) {
+    console.warn("[PushToken] No access token — aborting registration");
+    return;
+  }
+  let res = await doRegisterPushToken(token, accessToken);
   if (res.status === 401) {
+    console.log("[PushToken] Token expired, refreshing...");
     const refreshed = await refreshTokens();
     if (refreshed) {
-      await fetch(`${environment.API_BASE}/users/push-token`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${refreshed.accessToken}`,
-        },
-        body: JSON.stringify({ token }),
-      });
+      res = await doRegisterPushToken(token, refreshed.accessToken);
+    } else {
+      console.warn("[PushToken] Refresh failed — token not registered");
+      return;
     }
   }
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    console.error(`[PushToken] Failed ${res.status}:`, body);
+    return;
+  }
+  console.log("[PushToken] Successfully registered push token");
 }
