@@ -10,6 +10,8 @@ import { ToolsScreen } from '../screens/tools/ToolsScreen';
 import { SettingsNavigator } from './SettingsNavigator';
 import { NotificationHistoryScreen } from '../screens/notifications/NotificationHistoryScreen';
 import { useTheme } from '../components/theme/ThemeProvider';
+import { usePermission } from '../hooks/usePermission';
+import { CtPermission } from '../types/enums/permission.enum';
 
 export type BottomTabParamList = {
   Home: undefined;
@@ -37,6 +39,7 @@ const TAB_ICONS: Record<TabName, { active: IconName; inactive: IconName }> = {
 export function BottomTabNavigator() {
   const { theme } = useTheme();
   const c = theme.colors;
+  const { hasPermission } = usePermission();
 
   return (
     <Tab.Navigator
@@ -64,11 +67,22 @@ export function BottomTabNavigator() {
         },
       })}
     >
-      <Tab.Screen name="Home" component={HomeScreen} />
-      <Tab.Screen name="Options" component={OptionsScreen} />
-      <Tab.Screen name="Markets" component={MarketsScreen} />
-      <Tab.Screen name="Tools" component={ToolsScreen} />
-      <Tab.Screen name="Notifications" component={NotificationHistoryScreen} />
+      {hasPermission(CtPermission.VIEW_HOME) && (
+        <Tab.Screen name="Home" component={HomeScreen} />
+      )}
+      {hasPermission(CtPermission.VIEW_OPTIONS) && (
+        <Tab.Screen name="Options" component={OptionsScreen} />
+      )}
+      {hasPermission(CtPermission.VIEW_MARKETS) && (
+        <Tab.Screen name="Markets" component={MarketsScreen} />
+      )}
+      {hasPermission(CtPermission.VIEW_TOOLS) && (
+        <Tab.Screen name="Tools" component={ToolsScreen} />
+      )}
+      {hasPermission(CtPermission.VIEW_NOTIFICATIONS) && (
+        <Tab.Screen name="Notifications" component={NotificationHistoryScreen} />
+      )}
+      {/* Settings always visible for logged-in users */}
       <Tab.Screen name="Settings" component={SettingsNavigator} />
     </Tab.Navigator>
   );

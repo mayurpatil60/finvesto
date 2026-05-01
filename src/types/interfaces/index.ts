@@ -2,14 +2,17 @@
 
 import type { NotificationStatus, NotificationType } from "../enums";
 import type { CtUserRole, CtUserStatus } from "../enums/auth.enum";
+import type { CtPermission } from "../enums/permission.enum";
 
 export interface IUser {
   id: string;
+  _id?: string;
   username: string;
   name: string;
   email: string;
   role: CtUserRole;
   status: CtUserStatus;
+  permissions: CtPermission[];
 }
 
 export interface IAuthTokens {
