@@ -10,12 +10,14 @@ import { useTheme } from '../../components/theme/ThemeProvider';
 import { AppHeader } from '../../components/layout/AppHeader';
 import { APP_NAME, SPACING } from '../../types/constants';
 import { SettingsStackParamList } from '../../navigation/SettingsNavigator';
+import { useAuth } from '../../components/auth/AuthProvider';
 
 export function SettingsScreen() {
   const { theme, isDark, setDark } = useTheme();
   const c = theme.colors;
   const [updating, setUpdating] = useState(false);
   const navigation = useNavigation<NativeStackNavigationProp<SettingsStackParamList>>();
+  const { logout, user } = useAuth();
 
   async function checkForUpdate() {
     if (__DEV__) {
@@ -118,6 +120,37 @@ export function SettingsScreen() {
             <Text style={[styles.rowTitle, { color: c.text }]}>Version</Text>
             <Text style={[styles.rowValue, { color: c.textSecondary }]}>1.0.0</Text>
           </View>
+        </View>
+
+        {/* Account Section */}
+        <Text style={[styles.sectionLabel, { color: c.textSecondary }]}>ACCOUNT</Text>
+
+        <View style={[styles.card, { backgroundColor: c.surface, borderColor: c.border }]}>
+          {user && (
+            <>
+              <View style={styles.row}>
+                <Text style={[styles.rowTitle, { color: c.text }]}>Logged in as</Text>
+                <Text style={[styles.rowValue, { color: c.textSecondary }]}>{user.username}</Text>
+              </View>
+              <View style={[styles.divider, { backgroundColor: c.border }]} />
+              <View style={styles.row}>
+                <Text style={[styles.rowTitle, { color: c.text }]}>Role</Text>
+                <Text style={[styles.rowValue, { color: c.textSecondary }]}>{user.role}</Text>
+              </View>
+              <View style={[styles.divider, { backgroundColor: c.border }]} />
+            </>
+          )}
+          <TouchableOpacity
+            style={styles.row}
+            onPress={() =>
+              Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
+                { text: 'Cancel', style: 'cancel' },
+                { text: 'Sign Out', style: 'destructive', onPress: () => logout() },
+              ])
+            }
+          >
+            <Text style={[styles.rowTitle, { color: '#ef4444' }]}>Sign Out</Text>
+          </TouchableOpacity>
         </View>
       </ScrollView>
     </SafeAreaView>

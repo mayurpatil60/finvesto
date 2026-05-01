@@ -7,7 +7,11 @@
 import React, { createContext, useContext, useEffect, useRef, useState } from "react";
 import * as Notifications from "expo-notifications";
 import { pushNotificationService } from "../../services/PushNotificationService";
+import { ensureNotificationHandler } from "../../services/PushNotificationService";
 import type { INotificationPayload } from "../../types/interfaces";
+
+// Set handler exactly once when the module loads
+ensureNotificationHandler();
 
 // ─── Context ─────────────────────────────────────────────────────────────────
 
@@ -45,8 +49,12 @@ export function PushNotificationHandler({
 
   const notificationListener = useRef<Notifications.EventSubscription | null>(null);
   const responseListener = useRef<Notifications.EventSubscription | null>(null);
+  const registered = useRef(false);
 
   useEffect(() => {
+    if (registered.current) return; // prevent double-registration on re-render
+    registered.current = true;
+
     pushNotificationService.registerForPushNotifications().then((token) => {
       if (token) {
         setExpoPushToken(token);

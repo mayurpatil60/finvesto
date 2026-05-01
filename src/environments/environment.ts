@@ -7,6 +7,7 @@ const PROD_URL = "https://finvesto-backend-y9ly.onrender.com";
 
 export const environment = {
   production: !__DEV__,
+  API_BASE: __DEV__ ? DEV_URL : PROD_URL,
   ENDPOINTS: {
     NODE: {
       BASE_URL: __DEV__ ? DEV_URL : PROD_URL,

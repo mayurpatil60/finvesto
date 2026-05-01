@@ -8,6 +8,7 @@ import { OptionsScreen } from '../screens/options/OptionsScreen';
 import { MarketsScreen } from '../screens/markets/MarketsScreen';
 import { ToolsScreen } from '../screens/tools/ToolsScreen';
 import { SettingsNavigator } from './SettingsNavigator';
+import { NotificationHistoryScreen } from '../screens/notifications/NotificationHistoryScreen';
 import { useTheme } from '../components/theme/ThemeProvider';
 
 export type BottomTabParamList = {
@@ -15,6 +16,7 @@ export type BottomTabParamList = {
   Options: undefined;
   Markets: { initialTab?: string } | undefined;
   Tools: undefined;
+  Notifications: undefined;
   Settings: undefined;
 };
 
@@ -24,11 +26,12 @@ type TabName = keyof BottomTabParamList;
 type IconName = React.ComponentProps<typeof Ionicons>['name'];
 
 const TAB_ICONS: Record<TabName, { active: IconName; inactive: IconName }> = {
-  Home:     { active: 'home', inactive: 'home-outline' },
-  Options:  { active: 'bar-chart', inactive: 'bar-chart-outline' },
-  Markets:  { active: 'trending-up', inactive: 'trending-up-outline' },
-  Tools:    { active: 'construct', inactive: 'construct-outline' },
-  Settings: { active: 'settings', inactive: 'settings-outline' },
+  Home:          { active: 'home', inactive: 'home-outline' },
+  Options:       { active: 'bar-chart', inactive: 'bar-chart-outline' },
+  Markets:       { active: 'trending-up', inactive: 'trending-up-outline' },
+  Tools:         { active: 'construct', inactive: 'construct-outline' },
+  Notifications: { active: 'notifications', inactive: 'notifications-outline' },
+  Settings:      { active: 'settings', inactive: 'settings-outline' },
 };
 
 export function BottomTabNavigator() {
@@ -65,6 +68,7 @@ export function BottomTabNavigator() {
       <Tab.Screen name="Options" component={OptionsScreen} />
       <Tab.Screen name="Markets" component={MarketsScreen} />
       <Tab.Screen name="Tools" component={ToolsScreen} />
+      <Tab.Screen name="Notifications" component={NotificationHistoryScreen} />
       <Tab.Screen name="Settings" component={SettingsNavigator} />
     </Tab.Navigator>
   );

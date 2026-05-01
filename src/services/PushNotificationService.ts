@@ -8,13 +8,19 @@ import type {
   IPushNotificationService,
 } from "../types/interfaces";
 
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: false,
-  }),
-});
+let handlerSet = false;
+
+export function ensureNotificationHandler() {
+  if (handlerSet) return;
+  handlerSet = true;
+  Notifications.setNotificationHandler({
+    handleNotification: async () => ({
+      shouldShowAlert: true,
+      shouldPlaySound: true,
+      shouldSetBadge: false,
+    }),
+  });
+}
 
 class PushNotificationService implements IPushNotificationService {
   private static instance: PushNotificationService;

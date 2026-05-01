@@ -8,6 +8,7 @@ import { StatusBar } from 'expo-status-bar';
 import { AppNavigator } from './src/navigation/AppNavigator';
 import { PushNotificationHandler } from './src/components/notifications/PushNotificationHandler';
 import { ThemeProvider } from './src/components/theme/ThemeProvider';
+import { AuthProvider } from './src/components/auth/AuthProvider';
 import { useAppUpdater } from './src/hooks/useAppUpdater';
 
 function AppRoot() {
@@ -15,10 +16,12 @@ function AppRoot() {
 
   return (
     <ThemeProvider>
-      <PushNotificationHandler>
-        <StatusBar style="auto" />
-        <AppNavigator />
-      </PushNotificationHandler>
+      <AuthProvider>
+        <PushNotificationHandler>
+          <StatusBar style="auto" />
+          <AppNavigator />
+        </PushNotificationHandler>
+      </AuthProvider>
     </ThemeProvider>
   );
 }

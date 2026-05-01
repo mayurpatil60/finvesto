@@ -51,3 +51,6 @@ class PushNotificationServiceWeb {
 }
 
 export const pushNotificationService = PushNotificationServiceWeb.getInstance();
+
+// No-op shim — web has no expo-notifications handler to set
+export function ensureNotificationHandler(): void {}
