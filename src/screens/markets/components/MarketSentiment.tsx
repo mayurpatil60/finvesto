@@ -1,12 +1,11 @@
 // ─── Market Sentiment Component ───────────────────────────────────────────────
 // Displays a bar chart of Monthly Crossed 30 / 40 sentiment signals per date.
 
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
   Pressable,
-  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -99,14 +98,12 @@ export function MarketSentiment() {
     CtMarketSentimentType.MonthlyCrossed30,
   );
   const [loading, setLoading] = useState(false);
-  const [refreshing, setRefreshing] = useState(false);
   const [barData, setBarData] = useState<ReturnType<typeof buildBarData>>([]);
   const [containerWidth, setContainerWidth] = useState(0);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
 
-  const scrollRef       = useRef<ScrollView>(null);
   const chartScrollRef  = useRef<ScrollView>(null);
   const chartScrollX    = useRef(0);
   const selectedTypeRef = useRef(selectedType);
@@ -173,8 +170,8 @@ export function MarketSentiment() {
     loadSentiment();
   }, [selectedType]);
 
-  async function loadSentiment(silent = false) {
-    if (!silent) setLoading(true);
+  async function loadSentiment() {
+    setLoading(true);
     try {
       const res = await marketSentimentService.getSentiment(selectedTypeRef.current);
       const points = res.data?.data ?? [];
@@ -183,26 +180,13 @@ export function MarketSentiment() {
     } catch (e: any) {
       Alert.alert('Error', e.message ?? 'Failed to load market sentiment data');
     } finally {
-      if (!silent) setLoading(false);
+      setLoading(false);
     }
   }
 
-  const onRefresh = useCallback(() => {
-    setRefreshing(true);
-    loadSentiment(true).finally(() => {
-      setRefreshing(false);
-      scrollRef.current?.scrollTo({ y: 0, animated: false });
-    });
-  }, [selectedType]);
-
   return (
-    <ScrollView
-      ref={scrollRef}
-      style={{ flex: 1 }}
-      contentContainerStyle={{ paddingTop: SPACING.md, paddingBottom: SPACING.xl }}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-    >
-      <CollapsibleCard title="Market Sentiment">
+    <View style={{ flex: 1, paddingTop: SPACING.md, paddingBottom: SPACING.xl }}>
+      <CollapsibleCard title="Market Sentiment" subtitle="Best opportunities to Invest when bar is higher than other bars" style={{ marginHorizontal: 0 }}>
         <Pressable onPress={() => {
           if (justPressedBarRef.current) { justPressedBarRef.current = false; return; }
           setSelectedIndex(null);
@@ -216,14 +200,6 @@ export function MarketSentiment() {
             onChange={(v) => setSelectedType(v as CtMarketSentimentType)}
             style={{ flex: 1 }}
           />
-
-          <TouchableOpacity
-            style={[styles.refreshBtn, { borderColor: c.border, backgroundColor: c.surface }]}
-            onPress={() => loadSentiment()}
-            disabled={loading}
-          >
-            <Ionicons name="refresh-outline" size={18} color={c.primary} />
-          </TouchableOpacity>
         </View>
 
         {/* Loading */}
@@ -362,7 +338,7 @@ export function MarketSentiment() {
         )}
         </Pressable>
       </CollapsibleCard>
-    </ScrollView>
+    </View>
   );
 }
 
@@ -395,12 +371,6 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
     gap: SPACING.sm,
     marginBottom: SPACING.sm,
-  },
-  refreshBtn: {
-    borderWidth: 1,
-    borderRadius: 8,
-    padding: 8,
-    marginBottom: 2,
   },
   center: {
     height: 200,

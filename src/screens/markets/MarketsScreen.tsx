@@ -11,11 +11,10 @@ import { IpoScreen } from './components/IpoScreen';
 import { FundamentalsScreen } from './components/FundamentalsScreen';
 import { InvestmentsScreen } from './components/InvestmentsScreen';
 import { MarketSignalScreen } from './components/MarketSignalScreen';
-import { MarketSentiment } from './components/MarketSentiment';
 import type { BottomTabParamList } from '../../navigation/BottomTabNavigator';
 
-type MarketTab = 'Investments' | 'IPO' | 'Fundamentals' | 'Signal' | 'Sentiment';
-const TABS: MarketTab[] = ['Investments', 'IPO', 'Fundamentals', 'Signal', 'Sentiment'];
+type MarketTab = 'Investments' | 'IPO' | 'Fundamentals' | 'Signal';
+const TABS: MarketTab[] = ['Investments', 'IPO', 'Fundamentals', 'Signal'];
 
 export function MarketsScreen() {
   const { theme } = useTheme();
@@ -71,7 +70,6 @@ export function MarketsScreen() {
         {activeTab === 'Fundamentals' && <FundamentalsScreen />}
         {activeTab === 'Investments' && <InvestmentsScreen />}
         {activeTab === 'Signal' && <MarketSignalScreen />}
-        {activeTab === 'Sentiment' && <MarketSentiment />}
       </View>
     </SafeAreaView>
   );

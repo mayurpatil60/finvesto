@@ -9,6 +9,7 @@ import { AppHeader } from '../../components/layout/AppHeader';
 import { useTheme } from '../../components/theme/ThemeProvider';
 import { SPACING } from '../../types/constants';
 import { marketsService } from '../markets/services/markets.service';
+import { MarketSentiment } from '../markets/components/MarketSentiment';
 import type { BottomTabParamList } from '../../navigation/BottomTabNavigator';
 
 type DashboardNavProp = BottomTabNavigationProp<BottomTabParamList, 'Home'>;
@@ -125,6 +126,11 @@ export function HomeScreen() {
             )}
             <Text style={[styles.link, { color: c.primary }]}>View IPO →</Text>
           </TouchableOpacity>
+        </View>
+
+        {/* Market Sentiment */}
+        <View style={{ marginTop: SPACING.md }}>
+          <MarketSentiment />
         </View>
       </ScrollView>
     </SafeAreaView>

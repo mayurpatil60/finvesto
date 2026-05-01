@@ -14,23 +14,30 @@ import { SPACING } from '../../types/constants';
 
 interface Props {
   title: string;
+  subtitle?: string;
   children: React.ReactNode;
   defaultCollapsed?: boolean;
+  style?: object;
 }
 
-export function CollapsibleCard({ title, children, defaultCollapsed = false }: Props) {
+export function CollapsibleCard({ title, subtitle, children, defaultCollapsed = false, style }: Props) {
   const { theme } = useTheme();
   const c = theme.colors;
   const [collapsed, setCollapsed] = useState(defaultCollapsed);
 
   return (
-    <View style={[styles.card, { backgroundColor: c.surface, borderColor: c.border }]}>
+    <View style={[styles.card, { backgroundColor: c.surface, borderColor: c.border }, style]}>
       <TouchableOpacity
         style={styles.header}
         onPress={() => setCollapsed(v => !v)}
         activeOpacity={0.7}
       >
-        <Text style={[styles.title, { color: c.text }]}>{title}</Text>
+        <View style={{ flex: 1 }}>
+          <Text style={[styles.title, { color: c.text }]}>{title}</Text>
+          {subtitle ? (
+            <Text style={[styles.subtitle, { color: c.textSecondary }]}>{subtitle}</Text>
+          ) : null}
+        </View>
         <Ionicons
           name={collapsed ? 'chevron-down-outline' : 'chevron-up-outline'}
           size={16}
@@ -54,7 +61,7 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     justifyContent: 'space-between',
     paddingHorizontal: SPACING.md,
     paddingVertical: SPACING.md,
@@ -62,6 +69,10 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 14,
     fontWeight: '400',
+  },
+  subtitle: {
+    fontSize: 11,
+    marginTop: 2,
   },
   body: {
     paddingHorizontal: SPACING.md,
