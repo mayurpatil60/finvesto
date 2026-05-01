@@ -20,20 +20,26 @@ export function ServerStatusBanner() {
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const startTimeRef = useRef<number>(Date.now());
   const isMounted = useRef(true);
+  const bannerShown = useRef(false);
 
   const ping = async () => {
     try {
       const res = await fetch(HEALTH_URL, { method: 'GET' });
       if (res.ok) {
         if (!isMounted.current) return;
-        setState('ready');
-        // Fade out banner
-        Animated.timing(fadeAnim, {
-          toValue: 0,
-          duration: 600,
-          useNativeDriver: true,
-        }).start();
         if (intervalRef.current) clearInterval(intervalRef.current);
+        if (bannerShown.current) {
+          // Fade out then mark ready
+          Animated.timing(fadeAnim, {
+            toValue: 0,
+            duration: 600,
+            useNativeDriver: true,
+          }).start(() => {
+            if (isMounted.current) setState('ready');
+          });
+        } else {
+          setState('ready');
+        }
         return;
       }
     } catch {
@@ -42,7 +48,8 @@ export function ServerStatusBanner() {
 
     if (!isMounted.current) return;
     const elapsed = Date.now() - startTimeRef.current;
-    if (elapsed >= BOOT_THRESHOLD_MS) {
+    if (elapsed >= BOOT_THRESHOLD_MS && !bannerShown.current) {
+      bannerShown.current = true;
       setState('booting');
       Animated.timing(fadeAnim, {
         toValue: 1,
