@@ -27,9 +27,9 @@ export function ServerStatusBanner() {
       const res = await fetch(HEALTH_URL, { method: 'GET' });
       if (res.ok) {
         if (!isMounted.current) return;
+        // Server is up — stop polling permanently
         if (intervalRef.current) clearInterval(intervalRef.current);
         if (bannerShown.current) {
-          // Fade out then mark ready
           Animated.timing(fadeAnim, {
             toValue: 0,
             duration: 600,
@@ -57,15 +57,18 @@ export function ServerStatusBanner() {
         useNativeDriver: true,
       }).start();
     }
+    // Start polling only after first failure
+    if (!intervalRef.current) {
+      intervalRef.current = setInterval(ping, POLL_INTERVAL_MS);
+    }
   };
 
   useEffect(() => {
     isMounted.current = true;
     startTimeRef.current = Date.now();
 
-    // First ping immediately
+    // First ping immediately — interval starts only if this fails
     ping();
-    intervalRef.current = setInterval(ping, POLL_INTERVAL_MS);
 
     return () => {
       isMounted.current = false;
