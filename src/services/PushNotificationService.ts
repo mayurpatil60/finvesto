@@ -18,6 +18,8 @@ export function ensureNotificationHandler() {
       shouldShowAlert: true,
       shouldPlaySound: true,
       shouldSetBadge: false,
+      shouldShowBanner: true,
+      shouldShowList: true,
     }),
   });
 }
@@ -35,39 +37,70 @@ class PushNotificationService implements IPushNotificationService {
   }
 
   async getExpoPushToken(): Promise<string | null> {
+    console.log("[Step 1] getExpoPushToken called");
+
     if (!Device.isDevice) {
-      console.warn("Push notifications only work on physical devices.");
+      console.warn(
+        "[Step 1] FAIL: Not a physical device — push tokens not available on emulators/simulators",
+      );
       return null;
     }
+    console.log("[Step 1] PASS: Running on physical device");
 
+    console.log("[Step 2] Checking notification permissions...");
     const { status: existingStatus } =
       await Notifications.getPermissionsAsync();
-    let finalStatus = existingStatus;
+    console.log("[Step 2] Current permission status:", existingStatus);
 
+    let finalStatus = existingStatus;
     if (existingStatus !== "granted") {
+      console.log("[Step 2] Requesting permission...");
       const { status } = await Notifications.requestPermissionsAsync();
       finalStatus = status;
+      console.log("[Step 2] Permission after request:", finalStatus);
     }
 
     if (finalStatus !== "granted") {
-      console.warn("Permission for push notifications was not granted.");
+      console.warn(
+        "[Step 2] FAIL: Notification permission denied. Status:",
+        finalStatus,
+      );
       return null;
     }
+    console.log("[Step 2] PASS: Permission granted");
 
-    const tokenData = await Notifications.getExpoPushTokenAsync({
-      projectId: "778634ef-de86-45f4-8c7e-3102f66cd9f8",
-    });
-    return tokenData.data;
+    console.log(
+      "[Step 3] Calling getExpoPushTokenAsync with projectId: 778634ef-de86-45f4-8c7e-3102f66cd9f8",
+    );
+    try {
+      const tokenData = await Notifications.getExpoPushTokenAsync({
+        projectId: "778634ef-de86-45f4-8c7e-3102f66cd9f8",
+      });
+      console.log("[Step 3] PASS: Token obtained:", tokenData.data);
+      return tokenData.data;
+    } catch (err: any) {
+      console.error(
+        "[Step 3] FAIL: getExpoPushTokenAsync threw:",
+        err?.message ?? err,
+      );
+      return null;
+    }
   }
 
   async registerForPushNotifications(): Promise<string | null> {
+    console.log(
+      "[Step 0] registerForPushNotifications called. Platform:",
+      Platform.OS,
+    );
     if (Platform.OS === "android") {
+      console.log("[Step 0] Setting up Android notification channel...");
       await Notifications.setNotificationChannelAsync("default", {
         name: "default",
         importance: Notifications.AndroidImportance.MAX,
         vibrationPattern: [0, 250, 250, 250],
         lightColor: "#1A73E8",
       });
+      console.log("[Step 0] Android channel set up");
     }
 
     return this.getExpoPushToken();

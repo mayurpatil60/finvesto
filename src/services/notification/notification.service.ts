@@ -26,29 +26,40 @@ async function doRegisterPushToken(
 }
 
 export async function registerPushToken(token: string): Promise<void> {
-  console.log("[PushToken] Registering token:", token);
+  console.log("[Step 4] registerPushToken called with:", token);
   const { getAccessToken, refreshTokens } =
     await import("../auth/auth.service");
   let accessToken = await getAccessToken();
+  console.log("[Step 4] Access token present:", !!accessToken);
   if (!accessToken) {
-    console.warn("[PushToken] No access token — aborting registration");
+    console.warn(
+      "[Step 4] FAIL: No access token — user not logged in, aborting registration",
+    );
     return;
   }
+  console.log("[Step 4] Calling POST /users/push-token ...");
   let res = await doRegisterPushToken(token, accessToken);
+  console.log("[Step 4] Response status:", res.status);
   if (res.status === 401) {
-    console.log("[PushToken] Token expired, refreshing...");
+    console.log("[Step 4] 401 — refreshing tokens...");
     const refreshed = await refreshTokens();
     if (refreshed) {
+      console.log("[Step 4] Token refreshed, retrying registration...");
       res = await doRegisterPushToken(token, refreshed.accessToken);
+      console.log("[Step 4] Retry response status:", res.status);
     } else {
-      console.warn("[PushToken] Refresh failed — token not registered");
+      console.warn(
+        "[Step 4] FAIL: Token refresh failed — push token not registered",
+      );
       return;
     }
   }
   if (!res.ok) {
     const body = await res.text().catch(() => "");
-    console.error(`[PushToken] Failed ${res.status}:`, body);
+    console.error(`[Step 4] FAIL: Server returned ${res.status}:`, body);
     return;
   }
-  console.log("[PushToken] Successfully registered push token");
+  console.log(
+    "[Step 4] PASS: Push token successfully registered in backend DB",
+  );
 }

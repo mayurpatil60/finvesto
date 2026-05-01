@@ -92,8 +92,11 @@ export function PushNotificationHandler({
 
   // Register the push token with the backend whenever user logs in OR token arrives — whichever is last
   useEffect(() => {
+    console.log("[Step 4 trigger] user:", !!user, "expoPushToken:", !!expoPushToken);
     if (user && expoPushToken) {
-      registerPushToken(expoPushToken).catch(() => {});
+      registerPushToken(expoPushToken).catch((err) => {
+        console.error("[Step 4 trigger] registerPushToken threw:", err);
+      });
     }
   }, [user, expoPushToken]);
 
