@@ -92,6 +92,7 @@ export function OptionJourney() {
   }
 
   async function loadBatchIds() {
+    setLoading(true);
     try {
       const res = isMonthly
         ? await optionRangeService.getBatchIds()
@@ -101,6 +102,8 @@ export function OptionJourney() {
       if (ids.length) setSelectedBatch(ids[0]);
     } catch (e: any) {
       Alert.alert('Error', e.message ?? 'Failed to load batch ids');
+    } finally {
+      setLoading(false);
     }
   }
 

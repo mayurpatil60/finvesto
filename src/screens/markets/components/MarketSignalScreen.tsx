@@ -12,20 +12,12 @@ import {
   View,
 } from 'react-native';
 import { useTheme } from '../../../components/theme/ThemeProvider';
-import { SelectInput, SelectOption } from '../../../components/common/SelectInput';
+import { SelectInput } from '../../../components/common/SelectInput';
 import { DynamicTable } from '../../../components/dynamic-table/DynamicTable';
 import { DynamicColumn } from '../../../components/dynamic-table/types';
 import { SPACING } from '../../../types/constants';
 import { CollapsibleCard } from '../../../components/common/CollapsibleCard';
 import { marketsService } from '../services/markets.service';
-
-type SignalTimeframe = 'weekly' | 'monthly' | 'quarterly';
-
-const TIMEFRAME_OPTIONS: SelectOption<SignalTimeframe>[] = [
-  { label: 'Weekly',    value: 'weekly' },
-  { label: 'Monthly',   value: 'monthly' },
-  { label: 'Quarterly', value: 'quarterly' },
-];
 
 const SIGNAL_SCHEMA: DynamicColumn[] = [
   { field: 'ticker',       header: 'Ticker',        width: 100, type: 'text',   sortable: true, filterable: true, copyEnabled: true, copyPrefix: 'NSE:' },
@@ -40,46 +32,48 @@ export function MarketSignalScreen() {
   const c = theme.colors;
   const scrollRef = useRef<ScrollView>(null);
 
-  const [timeframe, setTimeframe] = useState<SignalTimeframe | ''>('');
-  const [batches, setBatches]         = useState<string[]>([]);
-  const [selectedBatch, setSelectedBatch] = useState('');
+  const [dateOptions, setDateOptions]   = useState<{ label: string; value: string }[]>([]);
+  const [selectedDate, setSelectedDate] = useState('');
   const [loading, setLoading]         = useState(false);
   const [data, setData]               = useState<any[]>([]);
   const [refreshing, setRefreshing]   = useState(false);
 
-  // Auto-load batch IDs when component mounts
+  // Auto-load dates when component mounts
   useEffect(() => {
-    loadBatchIds();
+    loadDates();
   }, []);
 
   const onRefresh = useCallback(() => {
     if (!data.length) { setRefreshing(false); return; }
     setRefreshing(true);
-    loadBatch(selectedBatch, true).finally(() => {
+    loadSignals(selectedDate, true).finally(() => {
       setRefreshing(false);
       scrollRef.current?.scrollTo({ y: 0, animated: false });
     });
-  }, [selectedBatch, data]);
+  }, [selectedDate, data]);
 
-  async function loadBatchIds() {
+  async function loadDates() {
     try {
-      const res = await marketsService.getMarketSignalBatchIds();
+      const res = await marketsService.getMarketSignalDates();
       const ids: string[] = res.data ?? [];
-      setBatches(ids);
-      if (ids.length) {
-        setSelectedBatch(ids[0]);
-        await loadBatch(ids[0]);
-      }
+      const allOption = { label: 'ALL', value: 'ALL' };
+      const options = [allOption, ...ids.map((d) => ({ label: d, value: d }))];
+      setDateOptions(options);
+      const first = ids.length ? ids[0] : 'ALL';
+      setSelectedDate(first);
+      await loadSignals(first);
     } catch (e: any) {
-      Alert.alert('Error', e.message ?? 'Failed to load batch ids');
+      setDateOptions([{ label: 'ALL', value: 'ALL' }]);
+      setSelectedDate('ALL');
+      Alert.alert('Error', e.message ?? 'Failed to load dates');
     }
   }
 
-  async function loadBatch(batchId = selectedBatch, silent = false) {
-    if (!batchId) return;
+  async function loadSignals(date = selectedDate, silent = false) {
+    if (!date) return;
     if (!silent) setLoading(true);
     try {
-      const res = await marketsService.getMarketSignalBatch(batchId);
+      const res = await marketsService.getMarketSignalFromDb(date);
       const rows = (res.data ?? [])
         .sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime())
         .map((o: any) => ({
@@ -93,23 +87,9 @@ export function MarketSignalScreen() {
         }));
       setData(rows);
     } catch (e: any) {
-      Alert.alert('Error', e.message ?? 'Failed to load batch');
+      Alert.alert('Error', e.message ?? 'Failed to load signals');
     } finally {
       if (!silent) setLoading(false);
-    }
-  }
-
-  async function fetchFresh() {
-    if (!timeframe) return;
-    setLoading(true);
-    try {
-      const res = await marketsService.getMarketSignals(timeframe);
-      Alert.alert('Done', `Fetched ${res.count} signals. Batch saved.`);
-      loadBatchIds();
-    } catch (e: any) {
-      Alert.alert('Error', e.message ?? 'Failed to fetch fresh data');
-    } finally {
-      setLoading(false);
     }
   }
 
@@ -122,48 +102,28 @@ export function MarketSignalScreen() {
     >
       <CollapsibleCard title="Market Signal">
         <Text style={[styles.subtitle, { color: c.textSecondary }]}>
-          RSI crossover signals. Fetch fresh data or load a saved batch.
+          RSI crossover signals (weekly/monthly/quarterly). Fetch fresh data or load a saved batch.
         </Text>
 
-        {/* Timeframe selector */}
-        <View style={styles.inputsRow}>
-          <SelectInput
-            label="Timeframe"
-            options={TIMEFRAME_OPTIONS}
-            value={timeframe as SignalTimeframe}
-            onChange={(v) => setTimeframe(v)}
-            style={{ width: 130 }}
-          />
-        </View>
+        {/* Date selector */}
+          <View style={styles.inputsRow}>
+            <SelectInput
+              label="Date"
+              value={selectedDate}
+              options={dateOptions}
+              onChange={setSelectedDate}
+              placeholder="Select date"
+              style={{ flex: 1, minWidth: 0 }}
+            />
+          </View>
 
-        {/* Batch selector */}
-        <View style={styles.inputsRow}>
-          <SelectInput
-            label="Batch"
-            value={selectedBatch}
-            options={batches.map((b) => ({ label: b, value: b }))}
-            onChange={setSelectedBatch}
-            placeholder="Select batch"
-            style={{ flex: 1, minWidth: 0 }}
-          />
-        </View>
-
-        <View style={styles.actionsRow}>
-          {/* Cloud download */}
-          <TouchableOpacity
-            style={[styles.iconBtn, { backgroundColor: '#16a34a', opacity: !timeframe || loading ? 0.7 : 1 }]}
-            onPress={fetchFresh}
-            disabled={!timeframe || loading}
-          >
-            <Text style={styles.iconBtnText}>☁</Text>
-          </TouchableOpacity>
-
-          {/* Load */}
-          <TouchableOpacity
-            style={[styles.btn, { backgroundColor: c.primary, opacity: loading || !selectedBatch ? 0.7 : 1 }]}
-            onPress={() => loadBatch()}
-            disabled={loading || !selectedBatch}
-          >
+          <View style={styles.actionsRow}>
+            {/* Load */}
+            <TouchableOpacity
+              style={[styles.btn, { backgroundColor: c.primary, opacity: loading || !selectedDate ? 0.7 : 1 }]}
+              onPress={() => loadSignals()}
+              disabled={loading || !selectedDate}
+            >
             {loading
               ? <ActivityIndicator color="#fff" size="small" />
               : <Text style={[styles.btnText, { color: '#fff' }]}>Load</Text>
@@ -186,9 +146,9 @@ export function MarketSignalScreen() {
           data={data}
           schema={SIGNAL_SCHEMA}
           loading={loading}
-          onRefresh={() => loadBatch(selectedBatch, true)}
+          onRefresh={() => loadSignals(selectedDate, true)}
           title="Market Signal"
-          emptyText="Select a batch and press Load."
+          emptyText="Select a date and press Load."
         />
       )}
     </ScrollView>
@@ -205,6 +165,5 @@ const styles = StyleSheet.create({
   btnText:      { fontSize: 13, fontWeight: '600' },
   btnIcon:      { width: 32, height: 32, borderRadius: 8, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
   iconBtn:      { width: 32, height: 32, borderRadius: 6, alignItems: 'center', justifyContent: 'center' },
-  iconBtnText:  { fontSize: 16 },
 });
 

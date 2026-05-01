@@ -1,94 +1,130 @@
-// ─── Home Screen ─────────────────────────────────────────────────────────────
+// ─── Home / Dashboard Screen ──────────────────────────────────────────────────
 
 import React, { useEffect, useState } from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
+import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { AppHeader } from '../../components/layout/AppHeader';
-import { LoadingSpinner } from '../../components/common/LoadingSpinner';
-import { usePushNotification } from '../../components/notifications/PushNotificationHandler';
 import { useTheme } from '../../components/theme/ThemeProvider';
-import { UserService } from '../../services/UserService';
 import { SPACING } from '../../types/constants';
-import type { UserModel } from '../../types/models/UserModel';
-import { NotificationType } from '../../types/enums';
+import { marketsService } from '../markets/services/markets.service';
+import type { BottomTabParamList } from '../../navigation/BottomTabNavigator';
 
-// ─── Test Notification Button ─────────────────────────────────────────────────
-function TestNotificationButton() {
-  const { sendLocalNotification, expoPushToken } = usePushNotification();
-  const { theme } = useTheme();
-  const c = theme.colors;
+type DashboardNavProp = BottomTabNavigationProp<BottomTabParamList, 'Home'>;
 
-  const handlePress = () => {
-    sendLocalNotification({
-      title: '🚀 Finvesto Alert',
-      body: 'Push notifications are working!',
-      type: NotificationType.GENERAL,
-      data: { screen: 'Home' },
-    });
-  };
-
-  return (
-    <View style={notifStyles.container}>
-      <TouchableOpacity style={[notifStyles.button, { backgroundColor: c.primary }]} onPress={handlePress}>
-        <Text style={[notifStyles.buttonText, { color: '#fff' }]}>Send Test Notification</Text>
-      </TouchableOpacity>
-      <Text style={[notifStyles.tokenLabel, { color: c.textSecondary }]} numberOfLines={2}>
-        {expoPushToken ? `Token: ${expoPushToken}` : 'No push token (use a physical device)'}
-      </Text>
-    </View>
-  );
-}
-
-const notifStyles = StyleSheet.create({
-  container: {
-    marginTop: SPACING.lg,
-    alignItems: 'center',
-    width: '100%',
-  },
-  button: {
-    paddingVertical: SPACING.sm,
-    paddingHorizontal: SPACING.lg,
-    borderRadius: 8,
-  },
-  buttonText: {
-    fontWeight: '600',
-    fontSize: 15,
-  },
-  tokenLabel: {
-    marginTop: SPACING.sm,
-    fontSize: 11,
-    textAlign: 'center',
-    paddingHorizontal: SPACING.md,
-  },
-});
-
-// ─── Home Screen ──────────────────────────────────────────────────────────────
 export function HomeScreen() {
   const { theme } = useTheme();
   const c = theme.colors;
-  const [user, setUser] = useState<UserModel | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const navigation = useNavigation<DashboardNavProp>();
+
+  const [latestDate, setLatestDate] = useState<string | null>(null);
+  const [latestCount, setLatestCount] = useState<number>(0);
+  const [loading, setLoading] = useState(true);
+
+  const [monthlyDate, setMonthlyDate] = useState<string | null>(null);
+  const [monthlyCount, setMonthlyCount] = useState<number>(0);
+  const [monthlyLoading, setMonthlyLoading] = useState(true);
+
+  const [signalDate, setSignalDate] = useState<string | null>(null);
+  const [signalCount, setSignalCount] = useState<number>(0);
+  const [signalLoading, setSignalLoading] = useState(true);
+
+  const [ipoOpenCount, setIpoOpenCount] = useState<number>(0);
+  const [ipoLoading, setIpoLoading] = useState(true);
 
   useEffect(() => {
-    UserService.getInstance()
-      .getCurrentUser()
-      .then((u) => { setUser(u); setIsLoading(false); })
-      .catch(() => setIsLoading(false));
-  }, []);
+    marketsService
+      .getInvestmentDates('cash', 'quarterly')
+      .then((res) => {
+        setLatestDate(res.latestDate ?? null);
+        setLatestCount(res.latestCount ?? 0);
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
 
-  if (isLoading) return <LoadingSpinner />;
+
+    marketsService
+      .getMarketSignalDates()
+      .then((res) => {
+        setSignalDate(res.latestDate ?? null);
+        setSignalCount(res.latestCount ?? 0);
+      })
+      .catch(() => {})
+      .finally(() => setSignalLoading(false));
+
+    marketsService
+      .getIpoUpcoming()
+      .then((res) => {
+        setIpoOpenCount((res.data?.upcoming_open ?? []).length);
+      })
+      .catch(() => {})
+      .finally(() => setIpoLoading(false));
+  }, []);
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: c.background }]}>
-      <AppHeader />
+      <AppHeader title="Dashboard" />
       <ScrollView contentContainerStyle={styles.body}>
-        <View style={[styles.card, { backgroundColor: c.surface, borderColor: c.border, shadowColor: c.cardShadow }]}>
-          <Text style={[styles.greeting, { color: c.text }]}>
-            Hello, {user?.getDisplayName() ?? 'User'} 👋
-          </Text>
-          <Text style={[styles.subtext, { color: c.primary }]}>Welcome to Finvesto</Text>
-          <Text style={[styles.hint, { color: c.textSecondary }]}>More features coming soon…</Text>
-          <TestNotificationButton />
+        {/* Row 1: Quarter + Monthly invest */}
+        <View style={styles.row}>
+          {/* Invest in this quarter */}
+          <TouchableOpacity
+            activeOpacity={0.8}
+            style={[styles.card, { backgroundColor: c.surface, borderColor: c.border }]}
+            onPress={() => navigation.navigate('Markets', { initialTab: 'Investments' })}
+          >
+            <Text style={[styles.cardLabel, { color: c.textSecondary }]}>
+              Invest in this quarter
+            </Text>
+            {loading ? (
+              <ActivityIndicator color={c.primary} style={{ marginVertical: SPACING.sm }} />
+            ) : (
+              <>
+                <Text style={[styles.count, { color: c.primary }]}>{latestCount}</Text>
+                <Text style={[styles.date, { color: c.textSecondary }]}>{latestDate ?? '—'}</Text>
+              </>
+            )}
+            <Text style={[styles.link, { color: c.primary }]}>View Investments →</Text>
+          </TouchableOpacity>
+
+          {/* Market Signal */}
+          <TouchableOpacity
+            activeOpacity={0.8}
+            style={[styles.card, { backgroundColor: c.surface, borderColor: c.border }]}
+            onPress={() => navigation.navigate('Markets', { initialTab: 'Signal' })}
+          >
+            <Text style={[styles.cardLabel, { color: c.textSecondary }]}>
+              Invest in this month
+            </Text>
+            {signalLoading ? (
+              <ActivityIndicator color={c.primary} style={{ marginVertical: SPACING.sm }} />
+            ) : (
+              <>
+                <Text style={[styles.count, { color: c.primary }]}>{signalCount}</Text>
+                <Text style={[styles.date, { color: c.textSecondary }]}>{signalDate ?? '—'}</Text>
+              </>
+            )}
+            <Text style={[styles.link, { color: c.primary }]}>View Market Signal →</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Row 2: IPO */}
+        <View style={[styles.row, { marginTop: SPACING.md }]}>
+          {/* IPO card */}
+          <TouchableOpacity
+            activeOpacity={0.8}
+            style={[styles.card, { backgroundColor: c.surface, borderColor: c.border }]}
+            onPress={() => navigation.navigate('Markets', { initialTab: 'IPO' })}
+          >
+            <Text style={[styles.cardLabel, { color: c.textSecondary }]}>Open IPO</Text>
+            {ipoLoading ? (
+              <ActivityIndicator color={c.primary} style={{ marginVertical: SPACING.sm }} />
+            ) : (
+              <Text style={[styles.count, { color: c.primary }]}>{ipoOpenCount}</Text>
+            )}
+            <Text style={[styles.link, { color: c.primary }]}>View IPO →</Text>
+          </TouchableOpacity>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -96,41 +132,45 @@ export function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-  },
+  safeArea: { flex: 1 },
   body: {
-    flexGrow: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
     padding: SPACING.lg,
+    paddingTop: SPACING.xl,
+  },
+  row: {
+    flexDirection: 'row',
+    gap: SPACING.md,
   },
   card: {
+    flex: 1,
     borderRadius: 16,
     borderWidth: 1,
-    padding: SPACING.xl,
-    alignItems: 'center',
-    width: '100%',
-    maxWidth: 480,
+    padding: SPACING.lg,
+    gap: SPACING.xs,
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.12,
-    shadowRadius: 8,
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
     elevation: 3,
   },
-  greeting: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    marginBottom: SPACING.sm,
-    textAlign: 'center',
-  },
-  subtext: {
-    fontSize: 16,
+  cardLabel: {
+    fontSize: 12,
     fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
     marginBottom: SPACING.xs,
   },
-  hint: {
+  count: {
+    fontSize: 48,
+    fontWeight: 'bold',
+    lineHeight: 56,
+  },
+  date: {
+    fontSize: 14,
+  },
+  link: {
     fontSize: 13,
-    marginTop: SPACING.md,
+    fontWeight: '600',
+    marginTop: SPACING.sm,
   },
 });
 

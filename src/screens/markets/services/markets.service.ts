@@ -75,7 +75,7 @@ export class MarketsService {
     timeframe: string,
   ): Promise<{ status: string; data: any[] }> {
     const res = await fetch(
-      `${BASE_URL}/markets/investments?type=${encodeURIComponent(type)}&segment=${encodeURIComponent(segment)}&timeframe=${encodeURIComponent(timeframe)}`,
+      `${BASE_URL}/markets/invest?type=${encodeURIComponent(type)}&segment=${encodeURIComponent(segment)}&timeframe=${encodeURIComponent(timeframe)}`,
     );
     if (!res.ok) throw new Error(`Failed to fetch investments: ${res.status}`);
     return res.json();
@@ -87,7 +87,7 @@ export class MarketsService {
     date: string,
   ): Promise<{ status: string; count: number; data: any[] }> {
     const res = await fetch(
-      `${BASE_URL}/markets/investments/db?segment=${encodeURIComponent(segment)}&timeframe=${encodeURIComponent(timeframe)}&date=${encodeURIComponent(date)}`,
+      `${BASE_URL}/markets/invest/db?segment=${encodeURIComponent(segment)}&timeframe=${encodeURIComponent(timeframe)}&date=${encodeURIComponent(date)}`,
     );
     if (!res.ok)
       throw new Error(`Failed to fetch investments from DB: ${res.status}`);
@@ -97,9 +97,15 @@ export class MarketsService {
   async getInvestmentDates(
     segment: string,
     timeframe: string,
-  ): Promise<{ status: string; count: number; data: string[] }> {
+  ): Promise<{
+    status: string;
+    count: number;
+    data: string[];
+    latestDate: string | null;
+    latestCount: number;
+  }> {
     const res = await fetch(
-      `${BASE_URL}/markets/investments/dates?segment=${encodeURIComponent(segment)}&timeframe=${encodeURIComponent(timeframe)}`,
+      `${BASE_URL}/markets/invest/dates?segment=${encodeURIComponent(segment)}&timeframe=${encodeURIComponent(timeframe)}`,
     );
     if (!res.ok)
       throw new Error(`Failed to fetch investment dates: ${res.status}`);
@@ -109,35 +115,37 @@ export class MarketsService {
   // ── Market Signal ─────────────────────────────────────────────────────────────
 
   async getMarketSignals(
-    timeframe: string,
+    type: string,
   ): Promise<{ status: string; count: number; data: any[] }> {
     const res = await fetch(
-      `${BASE_URL}/markets/market-signal?timeframe=${encodeURIComponent(timeframe)}`,
+      `${BASE_URL}/markets/market-signal?type=${encodeURIComponent(type)}`,
     );
     if (!res.ok)
       throw new Error(`Failed to fetch market signals: ${res.status}`);
     return res.json();
   }
 
-  async getMarketSignalBatchIds(): Promise<{
+  async getMarketSignalDates(): Promise<{
     status: string;
     count: number;
     data: string[];
+    latestDate: string | null;
+    latestCount: number;
   }> {
-    const res = await fetch(`${BASE_URL}/markets/market-signal/batch/ids`);
+    const res = await fetch(`${BASE_URL}/markets/market-signal/dates`);
     if (!res.ok)
-      throw new Error(`Failed to fetch market signal batch ids: ${res.status}`);
+      throw new Error(`Failed to fetch market signal dates: ${res.status}`);
     return res.json();
   }
 
-  async getMarketSignalBatch(
-    batchId: string,
+  async getMarketSignalFromDb(
+    date: string,
   ): Promise<{ status: string; count: number; data: any[] }> {
     const res = await fetch(
-      `${BASE_URL}/markets/market-signal/batch?batchId=${encodeURIComponent(batchId)}`,
+      `${BASE_URL}/markets/market-signal/db?date=${encodeURIComponent(date)}`,
     );
     if (!res.ok)
-      throw new Error(`Failed to fetch market signal batch: ${res.status}`);
+      throw new Error(`Failed to fetch market signal data: ${res.status}`);
     return res.json();
   }
 }

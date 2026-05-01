@@ -1,8 +1,9 @@
 // ─── Markets Screen ───────────────────────────────────────────────────────────
 
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { PanResponder, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRoute, RouteProp } from '@react-navigation/native';
 import { AppHeader } from '../../components/layout/AppHeader';
 import { useTheme } from '../../components/theme/ThemeProvider';
 import { SPACING } from '../../types/constants';
@@ -11,6 +12,7 @@ import { FundamentalsScreen } from './components/FundamentalsScreen';
 import { InvestmentsScreen } from './components/InvestmentsScreen';
 import { MarketSignalScreen } from './components/MarketSignalScreen';
 import { MarketSentiment } from './components/MarketSentiment';
+import type { BottomTabParamList } from '../../navigation/BottomTabNavigator';
 
 type MarketTab = 'Investments' | 'IPO' | 'Fundamentals' | 'Signal' | 'Sentiment';
 const TABS: MarketTab[] = ['Investments', 'IPO', 'Fundamentals', 'Signal', 'Sentiment'];
@@ -18,9 +20,18 @@ const TABS: MarketTab[] = ['Investments', 'IPO', 'Fundamentals', 'Signal', 'Sent
 export function MarketsScreen() {
   const { theme } = useTheme();
   const c = theme.colors;
-  const [activeTab, setActiveTab] = useState<MarketTab>('Investments');
+  const route = useRoute<RouteProp<BottomTabParamList, 'Markets'>>();
+  const [activeTab, setActiveTab] = useState<MarketTab>(
+    (route.params?.initialTab as MarketTab) ?? 'Investments',
+  );
   const activeTabRef = useRef(activeTab);
   activeTabRef.current = activeTab;
+
+  useEffect(() => {
+    if (route.params?.initialTab) {
+      setActiveTab(route.params.initialTab as MarketTab);
+    }
+  }, [route.params?.initialTab]);
 
   const swipePanResponder = useRef(
     PanResponder.create({

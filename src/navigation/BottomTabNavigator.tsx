@@ -3,6 +3,7 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
+import { HomeScreen } from '../screens/home/HomeScreen';
 import { OptionsScreen } from '../screens/options/OptionsScreen';
 import { MarketsScreen } from '../screens/markets/MarketsScreen';
 import { ToolsScreen } from '../screens/tools/ToolsScreen';
@@ -10,8 +11,9 @@ import { SettingsNavigator } from './SettingsNavigator';
 import { useTheme } from '../components/theme/ThemeProvider';
 
 export type BottomTabParamList = {
+  Home: undefined;
   Options: undefined;
-  Markets: undefined;
+  Markets: { initialTab?: string } | undefined;
   Tools: undefined;
   Settings: undefined;
 };
@@ -22,6 +24,7 @@ type TabName = keyof BottomTabParamList;
 type IconName = React.ComponentProps<typeof Ionicons>['name'];
 
 const TAB_ICONS: Record<TabName, { active: IconName; inactive: IconName }> = {
+  Home:     { active: 'home', inactive: 'home-outline' },
   Options:  { active: 'bar-chart', inactive: 'bar-chart-outline' },
   Markets:  { active: 'trending-up', inactive: 'trending-up-outline' },
   Tools:    { active: 'construct', inactive: 'construct-outline' },
@@ -34,7 +37,7 @@ export function BottomTabNavigator() {
 
   return (
     <Tab.Navigator
-      initialRouteName="Options"
+      initialRouteName="Home"
       screenOptions={({ route }) => ({
         headerShown: false,
         tabBarShowLabel: false,
@@ -58,6 +61,7 @@ export function BottomTabNavigator() {
         },
       })}
     >
+      <Tab.Screen name="Home" component={HomeScreen} />
       <Tab.Screen name="Options" component={OptionsScreen} />
       <Tab.Screen name="Markets" component={MarketsScreen} />
       <Tab.Screen name="Tools" component={ToolsScreen} />

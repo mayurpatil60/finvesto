@@ -1,6 +1,6 @@
 # Finvesto
 
-React Native (Expo) app built with TypeScript. Features dark/light theme, OTA auto-updates, and a 4-tab bottom navigation covering Options, Markets, Tools, and Settings.
+React Native (Expo) app built with TypeScript. Features dark/light theme, OTA auto-updates, and a 5-tab bottom navigation covering Home (dashboard), Options, Markets, Tools, and Settings.
 
 ## Requirements
 
@@ -65,11 +65,11 @@ finvesto/
 ├── eas.json                         # EAS build profiles (development / preview / production)
 └── src/
     ├── screens/
-    │   ├── home/                    # Home tab
+    │   ├── home/                    # Home tab — Dashboard (investment summary + open IPO cards)
     │   ├── auth/                    # Auth screens (login/register)
-    │   ├── markets/                 # Markets tab — Fundamentals, Investments, IPO
+    │   ├── markets/                 # Markets tab — Fundamentals, Investments, IPO, Market Signal
     │   ├── options/                 # Options tab
-    │   ├── components/          # OptionTrack (Default/Weekly), OptionJourney (Default/Monthly), OptionSelection, OptionSentiment
+    │   ├── components/              # OptionTrack, OptionJourney (Default/Monthly), OptionSelection, OptionSentiment
     │   │   └── services/            # Per-feature API services
     │   ├── tools/                   # Tools tab
     │   └── settings/                # Settings tab (theme toggle)
@@ -80,7 +80,7 @@ finvesto/
     │   └── theme/                   # ThemeProvider (context + useTheme hook)
     ├── navigation/
     │   ├── AppNavigator.tsx         # Root navigator
-    │   ├── BottomTabNavigator.tsx   # 4-tab bottom bar (Options, Markets, Tools, Settings)
+    │   ├── BottomTabNavigator.tsx   # 5-tab bottom bar (Home, Markets, Options, Tools, Settings)
     │   └── SettingsNavigator.tsx    # Settings stack navigator
     ├── services/
     │   ├── BaseService.ts           # Abstract HTTP base

@@ -1,5 +1,5 @@
 // ─── Option Track Component ───────────────────────────────────────────────────
-// Merged: Default (₹1k/₹3k lot-amount) and Weekly (₹500 lot-amount, weekly expiry)
+// Default (₹1k/₹3k lot-amount)
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
@@ -9,7 +9,6 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
@@ -21,12 +20,6 @@ import { CollapsibleCard } from '../../../components/common/CollapsibleCard';
 import { SelectInput } from '../../../components/common/SelectInput';
 import { Ionicons } from '@expo/vector-icons';
 import { optionTrackService } from '../services/option-track.service';
-import { optionTrackWeekService } from '../services/option-track-week.service';
-
-const TYPE_OPTIONS = [
-  { label: 'Default', value: 'default' },
-  { label: 'Weekly', value: 'weekly' },
-];
 
 const INDEX_OPTIONS = [
   { label: '0 (₹1k)', value: '0' },
@@ -61,19 +54,6 @@ const SCHEMA_DEFAULT: DynamicColumn[] = [
   { field: 'tag',            header: 'Tag',       width: 65,  type: 'text',   sortable: true },
 ];
 
-const SCHEMA_WEEKLY: DynamicColumn[] = [
-  { field: 'ticker',          header: 'Ticker',    width: 80,  type: 'text',   sortable: true, copyEnabled: true, copyPrefix: 'NSE:' },
-  { field: 'underline_ltp',   header: 'Stock LTP', width: 90,  type: 'number', sortable: true },
-  { field: 'mappDisplayName', header: 'Name',      width: 160, type: 'text',   sortable: true, filterable: true, copyEnabled: true, copyPrefix: '' },
-  { field: 'current_price',   header: 'Price',     width: 80,  type: 'number', sortable: true },
-  { field: 'day_changeP',     header: 'Day %',     width: 70,  type: 'number', sortable: true, colorFn: pctColor },
-  { field: 'open_week',       header: 'Open Wk',  width: 85,  type: 'number', sortable: true },
-  { field: 'change_per_week', header: 'Chg Wk %', width: 85,  type: 'number', sortable: true, colorFn: pctColor },
-  { field: 'volume',          header: 'Volume',    width: 80,  type: 'number', sortable: true },
-  { field: 'amount',          header: 'Amount',    width: 85,  type: 'number', sortable: true },
-  { field: 'tag',             header: 'Tag',       width: 65,  type: 'text',   sortable: true },
-];
-
 /** Strip filter-only fields before passing to table */
 function toDisplayDataDefault(items: any[]): any[] {
   return items.map(({ amount_target: _at, ...rest }) => rest);
@@ -83,7 +63,6 @@ export function OptionTrack() {
   const { theme } = useTheme();
   const c = theme.colors;
 
-  const [trackType, setTrackType] = useState<'default' | 'weekly'>('default');
   const [batches, setBatches] = useState<string[]>([]);
   const [selectedBatch, setSelectedBatch] = useState('');
   const [selectedIndex, setSelectedIndex] = useState('0');
@@ -92,10 +71,7 @@ export function OptionTrack() {
   const [data, setData] = useState<any[]>([]);
   const [rawBatchData, setRawBatchData] = useState<any[]>([]);
   const [refreshing, setRefreshing] = useState(false);
-  const [expiryDate, setExpiryDate] = useState('');
   const scrollRef = useRef<ScrollView>(null);
-
-  const isWeekly = trackType === 'weekly';
 
   const onRefresh = useCallback(() => {
     if (!data.length) { setRefreshing(false); return; }
@@ -104,11 +80,11 @@ export function OptionTrack() {
       setRefreshing(false);
       scrollRef.current?.scrollTo({ y: 0, animated: false });
     });
-  }, [selectedBatch, data, rawBatchData, trackType]);
+  }, [selectedBatch, data, rawBatchData]);
 
   useEffect(() => {
     loadBatchIds();
-  }, [trackType]);
+  }, []);
 
   function resetState() {
     setSelectedBatch('');
@@ -118,21 +94,17 @@ export function OptionTrack() {
     setBatches([]);
   }
 
-  function onTypeChange(newType: string) {
-    resetState();
-    setTrackType(newType as 'default' | 'weekly');
-  }
-
   async function loadBatchIds() {
+    setLoading(true);
     try {
-      const res = isWeekly
-        ? await optionTrackWeekService.getBatchIds()
-        : await optionTrackService.getBatchIds();
+      const res = await optionTrackService.getBatchIds();
       const ids: string[] = res.data ?? [];
       setBatches(ids);
       if (ids.length) setSelectedBatch(ids[0]);
     } catch (e: any) {
       Alert.alert('Error', e.message ?? 'Failed to load batch ids');
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -140,38 +112,20 @@ export function OptionTrack() {
     if (!batchId) return;
     if (!silent) setLoading(true);
     try {
-      if (isWeekly) {
-        const res = await optionTrackWeekService.getBatch(batchId);
-        const raw = (res.data ?? []).map((o: any) => ({
-          ticker: o.ticker,
-          underline_ltp: o.underline_ltp,
-          mappDisplayName: o.mappDisplayName,
-          current_price: o.current_price,
-          day_changeP: o.day_changeP,
-          open_week: o.open_week,
-          change_per_week: o.change_per_week,
-          volume: o.volume,
-          amount: o.amount,
-          tag: o.tag ?? '',
-        }));
-        setRawBatchData(raw);
-        setData(applyTagFilter(raw, selectedTag));
-      } else {
-        const res = await optionTrackService.getBatch(batchId);
-        const raw = (res.data ?? []).map((o: any) => ({
-          ticker: o.ticker,
-          underline_ltp: o.underline_ltp,
-          mappDisplayName: o.mappDisplayName,
-          current_price: o.current_price,
-          day_changeP: o.day_changeP,
-          volume: o.volume,
-          amount: o.amount,
-          amount_target: o.amount_target,
-          tag: o.tag ?? '',
-        }));
-        setRawBatchData(raw);
-        setData(toDisplayDataDefault(applyTagFilter(pickByIndex(raw, parseInt(selectedIndex, 10)), selectedTag)));
-      }
+      const res = await optionTrackService.getBatch(batchId);
+      const raw = (res.data ?? []).map((o: any) => ({
+        ticker: o.ticker,
+        underline_ltp: o.underline_ltp,
+        mappDisplayName: o.mappDisplayName,
+        current_price: o.current_price,
+        day_changeP: o.day_changeP,
+        volume: o.volume,
+        amount: o.amount,
+        amount_target: o.amount_target,
+        tag: o.tag ?? '',
+      }));
+      setRawBatchData(raw);
+      setData(toDisplayDataDefault(applyTagFilter(pickByIndex(raw, parseInt(selectedIndex, 10)), selectedTag)));
     } catch (e: any) {
       Alert.alert('Error', e.message ?? 'Failed to load batch');
     } finally {
@@ -194,24 +148,14 @@ export function OptionTrack() {
   function applyTagSelection(newTag: string) {
     setSelectedTag(newTag);
     if (rawBatchData.length) {
-      if (isWeekly) {
-        setData(applyTagFilter(rawBatchData, newTag));
-      } else {
-        setData(toDisplayDataDefault(applyTagFilter(pickByIndex(rawBatchData, parseInt(selectedIndex, 10)), newTag)));
-      }
+      setData(toDisplayDataDefault(applyTagFilter(pickByIndex(rawBatchData, parseInt(selectedIndex, 10)), newTag)));
     }
   }
 
   async function fetchFresh() {
-    if (isWeekly && !expiryDate.trim()) {
-      Alert.alert('Missing Expiry', 'Please enter an expiry date (YYYY-MM-DD).');
-      return;
-    }
     setLoading(true);
     try {
-      const res = isWeekly
-        ? await optionTrackWeekService.fetchFresh(expiryDate.trim())
-        : await optionTrackService.fetchFresh();
+      const res = await optionTrackService.fetchFresh();
       Alert.alert('Done', `Fetched fresh data — batch: ${res.batch_id} (${res.count} records)`);
       loadBatchIds();
     } catch (e: any) {
@@ -233,9 +177,7 @@ export function OptionTrack() {
           style: 'destructive',
           onPress: async () => {
             try {
-              const res = isWeekly
-                ? await optionTrackWeekService.deleteBatch(selectedBatch)
-                : await optionTrackService.deleteBatch(selectedBatch);
+              const res = await optionTrackService.deleteBatch(selectedBatch);
               Alert.alert('Deleted', `${res.deletedCount} records removed`);
               setSelectedBatch('');
               setData([]);
@@ -251,7 +193,7 @@ export function OptionTrack() {
   }
 
   const batchOptions = batches.map((b) => ({ label: b, value: b }));
-  const schema = isWeekly ? SCHEMA_WEEKLY : SCHEMA_DEFAULT;
+  const schema = SCHEMA_DEFAULT;
 
   return (
     <ScrollView
@@ -264,37 +206,8 @@ export function OptionTrack() {
     >
       <CollapsibleCard title="Option Track">
         <Text style={[styles.subtitle, { color: c.textSecondary }]}>
-          {isWeekly
-            ? 'NIFTY options nearest to ₹500 lot-amount — 1 CE + 1 PE, weekly expiry.'
-            : 'Options nearest to ₹1,000 and ₹3,000 lot-amount — 2 CE + 2 PE per ticker.'}
+          Options nearest to ₹1,000 and ₹3,000 lot-amount — 2 CE + 2 PE per ticker.
         </Text>
-
-        {/* Type selector */}
-        <View style={styles.inputsRow}>
-          <SelectInput
-            label="Type"
-            value={trackType}
-            options={TYPE_OPTIONS}
-            onChange={onTypeChange}
-            style={{ width: 120 }}
-          />
-        </View>
-
-        {/* Expiry date input (weekly only) */}
-        {isWeekly && (
-          <View style={styles.inputsRow}>
-            <View style={{ flex: 1 }}>
-              <Text style={[styles.label, { color: c.textSecondary }]}>Expiry Date</Text>
-              <TextInput
-                style={[styles.textInput, { color: c.text, borderColor: c.border, backgroundColor: c.surface }]}
-                value={expiryDate}
-                onChangeText={setExpiryDate}
-                placeholder="YYYY-MM-DD"
-                placeholderTextColor={c.textSecondary}
-              />
-            </View>
-          </View>
-        )}
 
         {/* Batch selector */}
         <View style={styles.inputsRow}>
@@ -310,20 +223,12 @@ export function OptionTrack() {
 
         <View style={styles.actionsRow}>
           <TouchableOpacity
-            style={[styles.iconBtn, { backgroundColor: '#16a34a' }]}
-            onPress={fetchFresh}
-            disabled={loading}
-          >
-            <Text style={styles.iconBtnText}>☁</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
             style={[
               styles.btn,
-              { backgroundColor: c.primary, opacity: loading || !selectedBatch || (isWeekly && !expiryDate.trim()) ? 0.7 : 1 },
+              { backgroundColor: c.primary, opacity: loading || !selectedBatch ? 0.7 : 1 },
             ]}
             onPress={() => loadBatch()}
-            disabled={loading || !selectedBatch || (isWeekly && !expiryDate.trim())}
+            disabled={loading || !selectedBatch}
           >
             {loading ? (
               <ActivityIndicator color="#fff" size="small" />
@@ -332,7 +237,7 @@ export function OptionTrack() {
             )}
           </TouchableOpacity>
 
-          {data.length > 0 && !isWeekly && (
+          {data.length > 0 && (
             <SelectInput
               label=""
               options={INDEX_OPTIONS}
@@ -428,7 +333,5 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  iconBtn: { width: 32, height: 32, borderRadius: 6, alignItems: 'center', justifyContent: 'center' },
-  iconBtnText: { fontSize: 16 },
 });
 
