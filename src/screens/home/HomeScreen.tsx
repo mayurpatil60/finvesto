@@ -73,7 +73,7 @@ export function HomeScreen() {
           <TouchableOpacity
             activeOpacity={0.8}
             style={[styles.card, { backgroundColor: c.surface, borderColor: c.border }]}
-            onPress={() => navigation.navigate('Markets', { initialTab: 'Investments' })}
+            onPress={() => navigation.navigate('Markets', { initialTab: 'Invest' })}
           >
             <Text style={[styles.cardLabel, { color: c.textSecondary }]}>
               Invest in this quarter
