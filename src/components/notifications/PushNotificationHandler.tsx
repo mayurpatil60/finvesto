@@ -85,14 +85,12 @@ export function PushNotificationHandler({
     };
   }, []);
 
-  // Register the push token with the backend whenever the user logs in
+  // Register the push token with the backend whenever user logs in OR token arrives — whichever is last
   useEffect(() => {
-    if (user && tokenRef.current) {
-      registerPushToken(tokenRef.current).catch(() => {
-        // Silent fail — will retry next login
-      });
+    if (user && expoPushToken) {
+      registerPushToken(expoPushToken).catch(() => {});
     }
-  }, [user]);
+  }, [user, expoPushToken]);
 
   const value: IPushNotificationContext = {
     expoPushToken,
