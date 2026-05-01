@@ -108,8 +108,6 @@ export function MarketSignalScreen() {
               value={selectedDate}
               options={dateOptions}
               onChange={setSelectedDate}
-              placeholder="Select date"
-              style={{ flex: 1, minWidth: 0 }}
             />
           </View>
 
@@ -155,7 +153,7 @@ const styles = StyleSheet.create({
   container:    { flex: 1 },
   content:      { paddingTop: SPACING.md, paddingBottom: SPACING.xl },
   subtitle:     { fontSize: 13, marginBottom: SPACING.sm },
-  inputsRow:    { flexDirection: 'row', gap: SPACING.sm, marginBottom: SPACING.sm },
+  inputsRow:    { flexDirection: 'row', flexWrap: 'wrap', gap: SPACING.sm, marginBottom: SPACING.sm },
   actionsRow:   { flexDirection: 'row', gap: SPACING.sm, alignItems: 'center', marginBottom: SPACING.sm, justifyContent: 'flex-end' },
   btn:          { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 6, overflow: 'hidden', minWidth: 56, alignItems: 'center', justifyContent: 'center' },
   btnText:      { fontSize: 13, fontWeight: '600' },
