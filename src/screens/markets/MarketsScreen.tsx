@@ -11,14 +11,20 @@ import { IpoScreen } from './components/IpoScreen';
 import { FundamentalsScreen } from './components/FundamentalsScreen';
 import { InvestmentsScreen } from './components/InvestmentsScreen';
 import { MarketSignalScreen } from './components/MarketSignalScreen';
+import { usePermission } from '../../hooks/usePermission';
+import { CtPermission } from '../../types/enums/permission.enum';
 import type { BottomTabParamList } from '../../navigation/BottomTabNavigator';
 
 type MarketTab = 'Invest' | 'Signal' | 'IPO' | 'Fundamentals';
-const TABS: MarketTab[] = ['Invest', 'Signal', 'IPO', 'Fundamentals'];
+const ALL_TABS: MarketTab[] = ['Invest', 'Signal', 'IPO', 'Fundamentals'];
 
 export function MarketsScreen() {
   const { theme } = useTheme();
   const c = theme.colors;
+  const { hasPermission } = usePermission();
+  const TABS = ALL_TABS.filter(
+    t => t !== 'Fundamentals' || hasPermission(CtPermission.VIEW_FUNDAMENTALS),
+  );
   const route = useRoute<RouteProp<BottomTabParamList, 'Markets'>>();
   const [activeTab, setActiveTab] = useState<MarketTab>(
     (route.params?.initialTab as MarketTab) ?? 'Invest',

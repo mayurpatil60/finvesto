@@ -1,6 +1,7 @@
 export enum CtPermission {
   VIEW_HOME = "view:home",
   VIEW_MARKETS = "view:markets",
+  VIEW_FUNDAMENTALS = "view:fundamentals",
   VIEW_OPTIONS = "view:options",
   VIEW_TOOLS = "view:tools",
   VIEW_NOTIFICATIONS = "view:notifications",
