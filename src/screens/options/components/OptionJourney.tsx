@@ -18,7 +18,6 @@ import { DynamicTable } from '../../../components/dynamic-table/DynamicTable';
 import { DynamicColumn } from '../../../components/dynamic-table/types';
 import { CollapsibleCard } from '../../../components/common/CollapsibleCard';
 import { SelectInput } from '../../../components/common/SelectInput';
-import { Ionicons } from '@expo/vector-icons';
 import { optionJourneyService } from '../services/option-journey.service';
 import { optionRangeService } from '../services/option-range.service';
 
@@ -168,34 +167,6 @@ export function OptionJourney() {
     }
   }
 
-  function confirmDelete() {
-    if (!selectedBatch) return;
-    Alert.alert(
-      'Delete Batch',
-      `Delete "${selectedBatch}"?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              const res = isMonthly
-                ? await optionRangeService.deleteBatch(selectedBatch)
-                : await optionJourneyService.deleteBatch(selectedBatch);
-              Alert.alert('Deleted', `${res.deletedCount} records removed`);
-              setSelectedBatch('');
-              setData([]);
-              loadBatchIds();
-            } catch (e: any) {
-              Alert.alert('Error', e.message ?? 'Failed to delete batch');
-            }
-          },
-        },
-      ],
-    );
-  }
-
   const batchOptions = batches.map((b) => ({ label: b, value: b }));
   const schema = isMonthly ? SCHEMA_MONTHLY : SCHEMA_DEFAULT;
 
@@ -261,16 +232,6 @@ export function OptionJourney() {
               onPress={() => setData([])}
             >
               <Text style={{ color: c.text, fontSize: 15 }}>✕</Text>
-            </TouchableOpacity>
-          )}
-
-          {data.length > 0 && (
-            <TouchableOpacity
-              style={[styles.btnIcon, { borderColor: '#dc2626', backgroundColor: '#dc262622' }]}
-              onPress={confirmDelete}
-              disabled={loading}
-            >
-              <Ionicons name="trash-outline" size={16} color="#dc2626" />
             </TouchableOpacity>
           )}
         </View>

@@ -9,5 +9,6 @@ export enum CtPermission {
   VIEW_CONFIG = "view:config",
   ADMIN_USERS = "admin:users",
   ADMIN_NOTIFICATIONS = "admin:notifications",
+  ADMIN_CLEAR_DATA = "admin:clear-data",
   WILDCARD = "*",
 }

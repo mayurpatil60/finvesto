@@ -18,7 +18,6 @@ import { DynamicTable } from '../../../components/dynamic-table/DynamicTable';
 import { DynamicColumn } from '../../../components/dynamic-table/types';
 import { CollapsibleCard } from '../../../components/common/CollapsibleCard';
 import { SelectInput } from '../../../components/common/SelectInput';
-import { Ionicons } from '@expo/vector-icons';
 import { optionTrackService } from '../services/option-track.service';
 
 const INDEX_OPTIONS = [
@@ -125,7 +124,10 @@ export function OptionTrack() {
         tag: o.tag ?? '',
       }));
       setRawBatchData(raw);
-      setData(toDisplayDataDefault(applyTagFilter(pickByIndex(raw, parseInt(selectedIndex, 10)), selectedTag)));
+      const hasBuy = raw.some((o: any) => o.tag === 'Buy');
+      const defaultTag = hasBuy ? 'Buy' : '';
+      setSelectedTag(defaultTag);
+      setData(toDisplayDataDefault(applyTagFilter(pickByIndex(raw, parseInt(selectedIndex, 10)), defaultTag)));
     } catch (e: any) {
       Alert.alert('Error', e.message ?? 'Failed to load batch');
     } finally {
@@ -163,33 +165,6 @@ export function OptionTrack() {
     } finally {
       setLoading(false);
     }
-  }
-
-  function confirmDelete() {
-    if (!selectedBatch) return;
-    Alert.alert(
-      'Delete Batch',
-      `Delete "${selectedBatch}"?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              const res = await optionTrackService.deleteBatch(selectedBatch);
-              Alert.alert('Deleted', `${res.deletedCount} records removed`);
-              setSelectedBatch('');
-              setData([]);
-              setRawBatchData([]);
-              loadBatchIds();
-            } catch (e: any) {
-              Alert.alert('Error', e.message ?? 'Failed to delete batch');
-            }
-          },
-        },
-      ],
-    );
   }
 
   const batchOptions = batches.map((b) => ({ label: b, value: b }));
@@ -263,16 +238,6 @@ export function OptionTrack() {
               onPress={() => { setData([]); setRawBatchData([]); setSelectedTag(''); }}
             >
               <Text style={{ color: c.text, fontSize: 15 }}>✕</Text>
-            </TouchableOpacity>
-          )}
-
-          {data.length > 0 && (
-            <TouchableOpacity
-              style={[styles.btnIcon, { borderColor: '#dc2626', backgroundColor: '#dc262622' }]}
-              onPress={confirmDelete}
-              disabled={loading}
-            >
-              <Ionicons name="trash-outline" size={16} color="#dc2626" />
             </TouchableOpacity>
           )}
         </View>

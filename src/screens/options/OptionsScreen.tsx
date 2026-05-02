@@ -6,12 +6,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppHeader } from '../../components/layout/AppHeader';
 import { useTheme } from '../../components/theme/ThemeProvider';
 import { SPACING } from '../../types/constants';
-import { OptionSelection } from './components/OptionSelection';
 import { OptionJourney } from './components/OptionJourney';
 import { OptionTrack } from './components/OptionTrack';
 import { OptionSentiment } from './components/OptionSentiment';
-type OptionsTab = 'Track' | 'Journey' | 'Selection' | 'Sentiment';
-const TABS: OptionsTab[] = ['Track', 'Journey', 'Selection', 'Sentiment'];
+type OptionsTab = 'Track' | 'Journey' | 'Sentiment';
+const TABS: OptionsTab[] = ['Track', 'Journey', 'Sentiment'];
 
 export function OptionsScreen() {
   const { theme } = useTheme();
@@ -53,7 +52,6 @@ export function OptionsScreen() {
       <View style={styles.content} {...swipePanResponder.panHandlers}>
         {activeTab === 'Track' && <OptionTrack />}
         {activeTab === 'Journey' && <OptionJourney />}
-        {activeTab === 'Selection' && <OptionSelection />}
         {activeTab === 'Sentiment' && <OptionSentiment />}
       </View>
     </SafeAreaView>
